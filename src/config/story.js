@@ -1,5 +1,5 @@
 // ============================================
-// CONFIG - Interactive Story Campaign & Narrative Missions
+// CONFIG - 7-Chapter Interactive Story Campaign & Architectural Decisions
 // ============================================
 
 const STORY_CHAPTERS = [
@@ -15,7 +15,7 @@ const STORY_CHAPTERS = [
       tag: 'STAFF_SRE'
     },
     briefing: `
-      "Bienvenido a bordo, Ingeniero Principal. Hoy es el día más crítico del año: el despliegue del nuevo monolito para el evento global de ventas.
+      "Bienvenido a bordo, Ingeniero Principal. Hoy es el día más crítico del año: el despliegue global de ventas en el Data Center Central.
       
       Los sensores de tráfico indican que millones de peticiones entrantes inundarán nuestros servidores desde la red pública en 360 grados. Si el Core central se satura, perderemos la disponibilidad del servicio.
       
@@ -35,10 +35,7 @@ const STORY_CHAPTERS = [
           apply: (state) => { state.lives += 5; state.maxLives += 5; }
         }
       ]
-    },
-    successMessage: `
-      "¡Excelente trabajo! El monolito resistió el pico de tráfico inicial. Pero nuestras sondas de telemetría detectan anomalías en los microservicios adyacentes..."
-    `
+    }
   },
   {
     id: 2,
@@ -54,7 +51,7 @@ const STORY_CHAPTERS = [
     briefing: `
       "¡Alerta Roja de PagerDuty! Un servicio aguas abajo ha comenzado a fallar y los reintentos automáticos están provocando un efecto avalancha (Cascading Failure).
       
-      Hemos activado una topología Activa-Activa entre dos centros de datos. Un rayo de sincronización de datos une los dos nodos Alpha y Beta.
+      Hemos activado una topología Activa-Activa entre dos centros de datos (Alpha y Beta). Un rayo láser de sincronización une ambos nodos.
       
       Necesitamos que coloques Circuit Breakers inmediatamente para aislar los fallos y uses API Gateways con rate limiting estricto."
     `,
@@ -69,13 +66,10 @@ const STORY_CHAPTERS = [
         {
           text: 'Desplegar Circuit Breakers de Alta Prioridad',
           effectDesc: 'Los Circuit Breakers cuestan $40 menos durante esta misión.',
-          apply: (state) => { if (TOWER_CONFIG.circuitbreaker) TOWER_CONFIG.circuitbreaker.cost -= 40; }
+          apply: (state) => { if (TOWER_CONFIG.circuitbreaker) TOWER_CONFIG.circuitbreaker.cost = Math.max(100, TOWER_CONFIG.circuitbreaker.cost - 40); }
         }
       ]
-    },
-    successMessage: `
-      "¡Cascada contenida con éxito! Los Circuit Breakers salvaron el clúster. Sin embargo, nuestros firewalls detectan tráfico botnet coordinado..."
-    `
+    }
   },
   {
     id: 3,
@@ -100,25 +94,22 @@ const STORY_CHAPTERS = [
       options: [
         {
           text: 'Activar Políticas WAF de Inspección Profunda (DPI)',
-          effectDesc: 'Todos los WAF ganan +25% de alcance y derriten escudos más rápido.',
+          effectDesc: 'Todos los WAF ganan +25% de alcance y velocidad de desintegración.',
           apply: (state) => { state.wafDpiBoost = true; }
         },
         {
           text: 'Subsidio de Infraestructura en Nodos PoP',
-          effectDesc: 'Recibes +$50 por cada nodo PoP que siga en pie al final de la oleada.',
-          apply: (state) => { state.popSubsidy = true; }
+          effectDesc: 'Inicias con +$150 de presupuesto para blindar los 4 puntos de presencia.',
+          apply: (state) => { state.money += 150; }
         }
       ]
-    },
-    successMessage: `
-      "¡Ataque L7 mitigado! El C-Level está impresionado. Pero las alertas del SIEM indican una infiltración interna en la VPN corporativa..."
-    `
+    }
   },
   {
     id: 4,
     levelId: 4,
     chapterNumber: 'CAPÍTULO IV',
-    title: 'Infiltración Zero-Trust & Pods de Kubernetes',
+    title: 'Infiltración Zero-Trust & Kubernetes Pods',
     speaker: {
       name: 'Dra. Samantha Ortiz',
       role: 'Arquitecta de Criptografía & Zero-Trust',
@@ -146,46 +137,108 @@ const STORY_CHAPTERS = [
           apply: (state) => { state.honeypotBoost = true; }
         }
       ]
-    },
-    successMessage: `
-      "¡Infiltración interna neutralizada! Pero la señal de ataque se ha concentrado en una firma desconocida... es el temido Rootkit Apex."
-    `
+    }
   },
   {
     id: 5,
-    levelId: 5,
+    levelId: 1,
     chapterNumber: 'CAPÍTULO V',
+    title: 'Man-In-The-Middle & Envenenamiento de Cadena',
+    speaker: {
+      name: 'Viktor Kross',
+      role: 'Líder de Red Team & Threat Intelligence',
+      avatarColor: '#f1fa8c',
+      tag: 'RED_TEAM'
+    },
+    briefing: `
+      "¡Reporte urgente de inteligencia! Ciberdelincuentes han comprometido repositorios upstream e inyectado troyanos Supply Chain Poisoning y atacantes MitM.
+      
+      Estos atacantes emiten campos de interferencia que ralentizan la cadencia de disparo de nuestras defensas y derraman lodo corrosivo.
+      
+      Necesitamos desplegar Message Queues (Kafka) y Shards de Base de Datos para asegurar la persistencia y absorción asíncrona de eventos."
+    `,
+    decision: {
+      prompt: 'DECISIÓN ESTRATÉGICA DEL ARQUITECTO:',
+      options: [
+        {
+          text: 'Particionamiento Masivo de Message Queues',
+          effectDesc: 'Los Message Queues ganan +40% de radio de detonación y cadencia.',
+          apply: (state) => { state.mqBoost = true; }
+        },
+        {
+          text: 'Aislamiento de Seguridad Sandbox',
+          effectDesc: 'Tus servidores son inmunes a los campos de interferencia MitM.',
+          apply: (state) => { state.mitmImmunity = true; }
+        }
+      ]
+    }
+  },
+  {
+    id: 6,
+    levelId: 2,
+    chapterNumber: 'CAPÍTULO VI',
+    title: 'Vulnerabilidad Spectre & Crisis de Memoria',
+    speaker: {
+      name: 'Dra. Aris Thorne',
+      role: 'Especialista en Computación Cuántica & Hardware',
+      avatarColor: '#ff5555',
+      tag: 'HARDWARE_SEC'
+    },
+    briefing: `
+      "La amenaza ha escalado a nivel de silicio. Exploits de canal lateral Spectre y gusanos polimórficos están eludiendo el aislamiento de memoria del kernel.
+      
+      Los atacantes Spectre pueden teletransportarse instantáneamente esquivando tus disparos, mientras que los gusanos polimórficos se autorregeneran.
+      
+      Utiliza el Foco Manual de Ataque (Clic Derecho) y la habilidad de reinicio forzado kill -9 para pulverizar los exploits en tránsito."
+    `,
+    decision: {
+      prompt: 'DECISIÓN ESTRATÉGICA DEL ARQUITECTO:',
+      options: [
+        {
+          text: 'Refrigeración Criogénica de Servidores',
+          effectDesc: 'Las habilidades DevOps (Q, W, E) tienen un 35% menos de tiempo de recarga.',
+          apply: (state) => { state.abilityCooldownMultiplier = 0.65; }
+        },
+        {
+          text: 'Fondo de Liquidez para Overclock',
+          effectDesc: 'Inicias con +$180 de presupuesto para blindar el centro de datos.',
+          apply: (state) => { state.money += 180; }
+        }
+      ]
+    }
+  },
+  {
+    id: 7,
+    levelId: 5,
+    chapterNumber: 'CAPÍTULO VII',
     title: 'Rootkit Apex: Protocolo Fin del Mundo',
     speaker: {
       name: 'Comando Central de Operaciones',
-      role: 'Directorio Ejecutivo & Defensa Cibernética',
+      role: 'Directorio Ejecutivo & Defensa Cibernética Global',
       avatarColor: '#ff79c6',
       tag: 'COMMAND_APEX'
     },
     briefing: `
-      "Esta es la batalla definitiva por la supervivencia de la infraestructura digital global.
+      "Esta es la batalla definitiva por la supervivencia de la infraestructura digital del planeta.
       
-      Un actor de estado ha desplegado el exploit Zero-Day 'Rootkit Apex'. Se están abriendo brechas cuánticas en el interior de nuestra red perimetral y el jefe supremo cuenta con un rayo orbital destructor.
+      Un actor de estado ha desplegado el exploit Zero-Day definitivo: 'Rootkit Apex'. Se están abriendo brechas cuánticas en el núcleo y el jefe cuenta con un rayo orbital destructor.
       
-      Utiliza todo el arsenal arquitectónico aprendido: Foco de Ataque Manual con Clic Derecho, Habilidades DevOps (Auto-Scale, DDoS Shield, kill -9) y reparaciones en caliente constantes."
+      Utiliza todo tu arsenal: Foco de Ataque Manual con Clic Derecho, Habilidades DevOps coordinadas y reparaciones en caliente constantes. ¡Salva la red global!"
     `,
     decision: {
       prompt: 'DECISIÓN ESTRATÉGICA DEL ARQUITECTO:',
       options: [
         {
           text: 'Protocolo de Emergencia: Sobrecarga Total de Clúster',
-          effectDesc: 'Las habilidades DevOps (Q, W, E) tienen un 30% menos de enfriamiento.',
-          apply: (state) => { state.abilityCooldownMultiplier = 0.7; }
+          effectDesc: 'Todas las torres ganan +20% de daño base y las habilidades recargan 30% más rápido.',
+          apply: (state) => { state.globalDamageMultiplier = 1.2; state.abilityCooldownMultiplier = 0.7; }
         },
         {
-          text: 'Fondo de Estabilidad de Emergencia',
-          effectDesc: 'Inicias con +$200 de presupuesto para blindar el perímetro interior.',
-          apply: (state) => { state.money += 200; }
+          text: 'Fondo Supremo de Infraestructura',
+          effectDesc: 'Inicias con +$250 de presupuesto para blindar el perímetro interior.',
+          apply: (state) => { state.money += 250; }
         }
       ]
-    },
-    successMessage: `
-      "¡VICTORIA TOTAL! El Rootkit Apex ha sido erradicado y la infraestructura global está a salvo. Has demostrado ser un Arquitecto de Sistemas Legendario."
-    `
+    }
   }
 ];

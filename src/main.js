@@ -137,6 +137,9 @@ const GameState = {
         AchievementSystem.check('no_crash');
       }
     }
+    if (typeof StorySystem !== 'undefined') {
+      StorySystem.onChapterVictory();
+    }
     EventHandlers.showVictory(this.score);
   },
 

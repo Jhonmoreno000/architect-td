@@ -119,7 +119,32 @@ const CODEX_DATA = {
     {
       name: 'Ransomware Crypter',
       danger: 'Extrema',
-      desc: 'Amenaza criptográfica que proyecta un escudo de cifrado sobre todos los paquetes aliados circundantes.'
+      desc: 'Amenaza criptográfica que proyecta un escudo de cifrado sobre todos los paquetes aliados circundantes y encripta servidores.'
+    },
+    {
+      name: 'Man-In-The-Middle Interceptor',
+      danger: 'Muy Alta',
+      desc: 'Inyector de interferencia de radiofrecuencia. Genera un aura electromagnética que ralentiza la cadencia de disparo de las defensas.'
+    },
+    {
+      name: 'Polymorphic Worm',
+      danger: 'Alta',
+      desc: 'Gusano polimórfico que regenera su salud periódicamente y transmuta su resistencia ante ataques físicos y ralentizaciones.'
+    },
+    {
+      name: 'Supply Chain Poisoning',
+      danger: 'Muy Alta',
+      desc: 'Troyano acorazado infiltrado en dependencias. Al recibir fuego hostil arroja residuos corrosivos que dañan los servidores.'
+    },
+    {
+      name: 'Spectre CPU Exploit',
+      danger: 'Extrema',
+      desc: 'Ataque de canal lateral a nivel de microarquitectura. Se teletransporta instantáneamente hacia adelante al recibir impactos.'
+    },
+    {
+      name: 'AI Prompt Injection Swarm',
+      danger: 'Alta',
+      desc: 'Token neural corrupto diseñado para evadir filtros. Al ser destruido se fragmenta en 3 sub-tokens de alucinación.'
     },
     {
       name: 'Titan DDoS SYN Flood (Jefe)',

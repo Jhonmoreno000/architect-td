@@ -61,7 +61,10 @@ const WaveSystem = {
     const w = this.wave;
     const baseSquadCount = 4 + Math.floor(w * 1.2);
 
-    const squadArchetypes = ['swarm', 'mixed', 'heavy_assault', 'stealth_rush', 'crypted_convoy'];
+    const squadArchetypes = [
+      'swarm', 'mixed', 'heavy_assault', 'stealth_rush', 'crypted_convoy',
+      'cyber_sabotage', 'worm_infestation', 'prompt_rush', 'supply_siege', 'quantum_assault'
+    ];
 
     for (let s = 0; s < baseSquadCount; s++) {
       const type = squadArchetypes[Math.floor(Math.random() * squadArchetypes.length)];
@@ -76,9 +79,7 @@ const WaveSystem = {
         }
       } else if (type === 'heavy_assault') {
         this.waveQueue.push({ type: 'heavy', delay: 40 });
-        if (w >= 3) {
-          this.waveQueue.push({ type: 'malicious', delay: 25 });
-        }
+        if (w >= 3) this.waveQueue.push({ type: 'malicious', delay: 25 });
         this.waveQueue.push({ type: 'normal', delay: 20 });
       } else if (type === 'stealth_rush' && w >= 5) {
         this.waveQueue.push({ type: 'zeroday', delay: 30 });
@@ -87,6 +88,22 @@ const WaveSystem = {
         this.waveQueue.push({ type: 'ransomware', delay: 35 });
         this.waveQueue.push({ type: 'heavy', delay: 20 });
         this.waveQueue.push({ type: 'botnet', delay: 18 });
+      } else if (type === 'cyber_sabotage' && w >= 3) {
+        this.waveQueue.push({ type: 'mitm', delay: 32 });
+        this.waveQueue.push({ type: 'botnet', delay: 20 });
+      } else if (type === 'worm_infestation' && w >= 4) {
+        this.waveQueue.push({ type: 'worm', delay: 35 });
+        this.waveQueue.push({ type: 'fast', delay: 20 });
+      } else if (type === 'prompt_rush' && w >= 6) {
+        this.waveQueue.push({ type: 'prompt_injection', delay: 22 });
+        this.waveQueue.push({ type: 'prompt_injection', delay: 18 });
+        this.waveQueue.push({ type: 'fast', delay: 16 });
+      } else if (type === 'supply_siege' && w >= 8) {
+        this.waveQueue.push({ type: 'supply_chain', delay: 42 });
+        this.waveQueue.push({ type: 'malicious', delay: 25 });
+      } else if (type === 'quantum_assault' && w >= 10) {
+        this.waveQueue.push({ type: 'spectre', delay: 35 });
+        this.waveQueue.push({ type: 'zeroday', delay: 28 });
       } else {
         this.waveQueue.push({ type: 'normal', delay: 24 });
         this.waveQueue.push({ type: 'fast', delay: 20 });

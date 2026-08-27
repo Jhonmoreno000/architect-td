@@ -1,5 +1,5 @@
 // ============================================
-// UI - Event Handlers & Modal Controllers (Campaign, Guide, Achievements, Right-Click)
+// UI - Event Handlers & Modal Controllers (Non-Overlapping Modal Manager)
 // ============================================
 
 const EventHandlers = {
@@ -11,6 +11,15 @@ const EventHandlers = {
     this._setupGuide();
     this._setupStory();
     this._setupAchievements();
+    this._setupBackdropDismiss();
+  },
+
+  closeAllModals() {
+    this.hideScreen('guide-modal');
+    this.hideScreen('codex-modal');
+    this.hideScreen('story-modal');
+    this.hideScreen('achievements-modal');
+    this.hideScreen('incident-modal');
   },
 
   hideScreen(id) {
@@ -27,6 +36,23 @@ const EventHandlers = {
       el.classList.remove('hidden');
       el.style.display = displayType;
     }
+  },
+
+  _setupBackdropDismiss() {
+    const modalIds = ['guide-modal', 'codex-modal', 'achievements-modal', 'story-modal', 'incident-modal'];
+    modalIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('click', (e) => {
+          if (e.target === el) {
+            this.hideScreen(id);
+            if (!GameState.gameStarted && (id === 'story-modal' || id === 'codex-modal' || id === 'guide-modal')) {
+              this.showScreen('intro-screen');
+            }
+          }
+        });
+      }
+    });
   },
 
   _setupCanvas() {
@@ -101,6 +127,7 @@ const EventHandlers = {
       AudioSystem.init();
       AudioSystem.startMusic();
       StorySystem.isStoryMode = false;
+      this.closeAllModals();
       this.hideScreen('intro-screen');
       this.showLevelSelect();
     });
@@ -109,6 +136,7 @@ const EventHandlers = {
     document.getElementById('btn-intro-story')?.addEventListener('click', () => {
       AudioSystem.init();
       AudioSystem.startMusic();
+      this.closeAllModals();
       StorySystem.startCampaignChapter(1);
     });
 
@@ -120,6 +148,7 @@ const EventHandlers = {
 
     // Start Game from Level Select
     document.getElementById('btn-launch-level')?.addEventListener('click', () => {
+      this.closeAllModals();
       this.hideScreen('level-select-screen');
       this.showScreen('game-container', 'flex');
       GameState.init();
@@ -204,6 +233,7 @@ const EventHandlers = {
 
   _setupAchievements() {
     document.getElementById('achievement-count')?.parentElement?.addEventListener('click', () => {
+      this.closeAllModals();
       if (typeof AchievementSystem !== 'undefined') {
         AchievementSystem.showAchievementsModal();
       }
@@ -223,13 +253,7 @@ const EventHandlers = {
       if (e.key === 'Escape') {
         Shop.deselectAll();
         GameState.selectPlacedTower(null);
-        this.closeCodex();
-        this.closeGuide();
-        this.hideScreen('story-modal');
-        if (typeof AchievementSystem !== 'undefined') {
-          AchievementSystem.closeAchievementsModal();
-        }
-        IncidentSystem.closeModal();
+        this.closeAllModals();
       }
 
       // Shop numbers 1-9 and 0
@@ -281,9 +305,11 @@ const EventHandlers = {
 
   _setupModals() {
     document.getElementById('btn-codex')?.addEventListener('click', () => {
+      this.closeAllModals();
       this.openCodex();
     });
     document.getElementById('btn-intro-codex')?.addEventListener('click', () => {
+      this.closeAllModals();
       this.openCodex();
     });
     document.getElementById('btn-close-codex')?.addEventListener('click', () => {
@@ -300,9 +326,11 @@ const EventHandlers = {
 
   _setupGuide() {
     document.getElementById('btn-guide')?.addEventListener('click', () => {
+      this.closeAllModals();
       this.openGuide();
     });
     document.getElementById('btn-intro-guide')?.addEventListener('click', () => {
+      this.closeAllModals();
       this.openGuide();
     });
     document.getElementById('btn-close-guide')?.addEventListener('click', () => {
@@ -311,12 +339,16 @@ const EventHandlers = {
   },
 
   openGuide() {
+    this.closeAllModals();
     this.showScreen('guide-modal', 'flex');
     this.renderGuideSection(0);
   },
 
   closeGuide() {
     this.hideScreen('guide-modal');
+    if (!GameState.gameStarted) {
+      this.showScreen('intro-screen');
+    }
   },
 
   renderGuideSection(idx) {
@@ -325,7 +357,7 @@ const EventHandlers = {
     if (!tabsContainer || !contentContainer) return;
 
     tabsContainer.innerHTML = GUIDE_SECTIONS.map((sec, i) => `
-      <button class="w-full text-left p-3 rounded-xl text-xs font-bold font-heading transition-all ${i === idx ? 'bg-green-600 text-black shadow-md' : 'text-slate-400 hover:text-white hover:bg-white/5'}" data-idx="${i}">
+      <button class="w-full text-left p-3 rounded-xl text-xs font-bold font-heading transition-all cursor-pointer ${i === idx ? 'bg-green-600 text-black shadow-md' : 'text-slate-400 hover:text-white hover:bg-white/5'}" data-idx="${i}">
         ${sec.title}
       </button>
     `).join('');
@@ -341,6 +373,7 @@ const EventHandlers = {
   },
 
   showLevelSelect() {
+    this.closeAllModals();
     this.hideScreen('intro-screen');
     this.hideScreen('game-container');
     this.hideScreen('gameover-screen');
@@ -412,12 +445,16 @@ const EventHandlers = {
   },
 
   openCodex() {
+    this.closeAllModals();
     this.showScreen('codex-modal', 'flex');
     this.renderCodexTowers();
   },
 
   closeCodex() {
     this.hideScreen('codex-modal');
+    if (!GameState.gameStarted) {
+      this.showScreen('intro-screen');
+    }
   },
 
   renderCodexTowers() {
@@ -463,6 +500,7 @@ const EventHandlers = {
   },
 
   _restart() {
+    this.closeAllModals();
     this.hideScreen('gameover-screen');
     this.hideScreen('victory-screen');
     this.showScreen('game-container', 'flex');
@@ -470,6 +508,7 @@ const EventHandlers = {
   },
 
   showGameOver(wave, score) {
+    this.closeAllModals();
     this.hideScreen('game-container');
     this.showScreen('gameover-screen', 'flex');
     document.getElementById('go-wave').textContent = wave;
@@ -477,6 +516,7 @@ const EventHandlers = {
   },
 
   showVictory(score) {
+    this.closeAllModals();
     this.hideScreen('game-container');
     this.showScreen('victory-screen', 'flex');
     document.getElementById('v-score').textContent = score.toLocaleString();
@@ -488,7 +528,7 @@ const EventHandlers = {
         if (nextChapterId <= STORY_CHAPTERS.length) {
           vBtn.textContent = `SIGUIENTE: CAPÍTULO ${nextChapterId}`;
         } else {
-          vBtn.textContent = 'CAMPAÑA COMPLETADA';
+          vBtn.textContent = 'CAMPAÑA COMPLETADA (RANGO S)';
         }
       }
     }

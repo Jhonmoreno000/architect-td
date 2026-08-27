@@ -1,33 +1,11 @@
 // ============================================
-// ENTITIES - Optimized Request (Enemy) with Reduced Allocations
+// ENTITIES - Optimized Request (Enemy) with New Cyber Threat Archetypes
 // ============================================
 
 /**
  * Request - Entidad enemiga con IA de pathfinding, flocking y habilidades especiales.
- *
- * Cada enemigo tiene: salud, velocidad, daño de ataque, y habilidades únicas según tipo.
- * Los enemigos se mueven hacia el core usando steering behaviors con avoidance de torres.
- *
- * Tipos soportados: normal, fast, heavy, botnet, malicious, zeroday, ransomware, boss_*
- *
- * Optimizaciones de rendimiento:
- * - Core position cacheada (no deep lookup cada frame)
- * - Comparaciones de distancia² para avoidance
- * - Sin allocations de objetos en el hot path (steering usa cálculos directos)
- *
- * @class Request
- * @extends Entity
  */
 class Request extends Entity {
-  /**
-   * Crea un enemigo con stats escalados por dificultad.
-   * @param {number} x - Posición X de spawn
-   * @param {number} y - Posición Y de spawn
-   * @param {Object} targetPos - Posición objetivo {x, y} (normalmente el core)
-   * @param {string} [type='normal'] - Tipo de enemigo (key de ENEMY_CONFIG)
-   * @param {string} [difficulty='staging'] - Nivel de dificultad
-   * @param {boolean} [isMinion=false] - Si es clon/minion (reduce HP 45%)
-   */
   constructor(x, y, targetPos, type = 'normal', difficulty = 'staging', isMinion = false) {
     super(x, y);
     this.targetPosX = targetPos ? targetPos.x : 520;
@@ -55,6 +33,8 @@ class Request extends Entity {
     this.cloakTimer = 0;
     this.isCloaked = false;
     this.hasCloned = false;
+    this.teleportCooldown = 0;
+    this.poisonTimer = 0;
     this.lastHitTower = null;
 
     const diff = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.staging;
@@ -79,6 +59,9 @@ class Request extends Entity {
     this.locksTowers = !!stats.locksTowers;
     this.stunsTowers = !!stats.stunsTowers;
     this.cloaks = !!stats.cloaks;
+    this.jamsTowers = !!stats.jamsTowers;
+    this.dropsPoison = !!stats.dropsPoison;
+    this.teleports = !!stats.teleports;
     this.isFinalBoss = !!stats.isFinalBoss;
 
     this.attackRange = stats.attackRange || 85;
@@ -89,11 +72,6 @@ class Request extends Entity {
     this.trailTimer = 0;
   }
 
-  /**
-   * Actualiza IA, movimiento y habilidades del enemigo.
-   * Incluye: pathfinding al core, avoidance de torres/enemigos, burn DOT, stun, slow.
-   * @param {number} dt - Delta time
-   */
   update(dt) {
     if (!this.alive || this.reached) return;
     this.animTimer += dt * 0.08;
@@ -108,9 +86,10 @@ class Request extends Entity {
       this.isCloaked = (this.cloakTimer % 180) < 80;
     }
 
-    if (this.isBoss && this.regenerates) {
-      if (Math.random() < 0.035 && this.hp < this.maxHp) {
-        const heal = Math.min(this.maxHp - this.hp, Math.round(this.maxHp * 0.012));
+    // Regeneration logic (Worm & Memory Leak Boss)
+    if (this.regenerates && this.hp < this.maxHp) {
+      if (Math.random() < 0.04) {
+        const heal = Math.min(this.maxHp - this.hp, Math.round(this.maxHp * 0.015));
         this.hp += heal;
         if (GameState.engine && Math.random() < 0.25) {
           GameState.engine.addFloatingText(this.x, this.y - 18, `+${heal} REGEN`, '#bd93f9', 9);
@@ -118,6 +97,51 @@ class Request extends Entity {
       }
     }
 
+    // MITM Jamming Aura
+    if (this.jamsTowers && GameState.engine) {
+      const towers = GameState.engine.towers;
+      for (let i = 0, len = towers.length; i < len; i++) {
+        const t = towers[i];
+        const dx = this.x - (t.x + t.size * 0.5);
+        const dy = this.y - (t.y + t.size * 0.5);
+        if (dx * dx + dy * dy < 12100) { // 110px radius
+          t.cooldown = Math.max(t.cooldown, 15);
+          if (Math.random() < 0.05) {
+            GameState.engine.addParticles(t.x + t.size * 0.5, t.y + t.size * 0.5, '#38bdf8', 1, 'spark', 1);
+          }
+        }
+      }
+    }
+
+    // Supply Chain Poison Dropper
+    if (this.dropsPoison && GameState.engine) {
+      this.poisonTimer += dt;
+      if (this.poisonTimer > 160) {
+        this.poisonTimer = 0;
+        GameState.engine.addParticles(this.x, this.y, '#f1fa8c', 8, 'spark', 2.5);
+        const towers = GameState.engine.towers;
+        for (let i = 0, len = towers.length; i < len; i++) {
+          const t = towers[i];
+          const dx = this.x - (t.x + t.size * 0.5);
+          const dy = this.y - (t.y + t.size * 0.5);
+          if (dx * dx + dy * dy < 6400) { // 80px radius
+            t.hp = Math.max(1, t.hp - 8);
+            GameState.engine.addFloatingText(t.x + 18, t.y - 10, '-8 CORROSIÓN', '#f1fa8c', 9);
+          }
+        }
+      }
+    }
+
+    // Spectre Blink Teleport
+    if (this.teleports) {
+      this.teleportCooldown += dt;
+      if (this.teleportCooldown > 220) {
+        this.teleportCooldown = 0;
+        this._blinkForward(70);
+      }
+    }
+
+    // Shield Nearby Allies (Ransomware)
     if (this.shieldNearby && GameState.engine) {
       const enemies = GameState.engine.enemies;
       for (let i = 0, len = enemies.length; i < len; i++) {
@@ -132,6 +156,7 @@ class Request extends Entity {
       }
     }
 
+    // Final Boss Clone Shadow Mechanics
     if (this.isFinalBoss && !this.hasCloned && this.hp <= this.maxHp * 0.5 && GameState.engine) {
       this.hasCloned = true;
       AudioSystem.play('boss_alert');
@@ -272,6 +297,22 @@ class Request extends Entity {
     }
   }
 
+  _blinkForward(distance) {
+    if (!GameState.engine) return;
+    const targetX = GameState.engine.core.x;
+    const targetY = GameState.engine.core.y;
+    const dx = targetX - this.x;
+    const dy = targetY - this.y;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    if (d > 30) {
+      GameState.engine.addParticles(this.x, this.y, '#ff5555', 10, 'spark', 3);
+      GameState.engine.addRingShockwave(this.x, this.y, '#ff5555', 30);
+      this.x += (dx / d) * distance;
+      this.y += (dy / d) * distance;
+      GameState.engine.addFloatingText(this.x, this.y - 15, 'QUANTUM PHASE BLINK', '#ff5555', 10, true);
+    }
+  }
+
   _performHostileAttack() {
     let target = null;
     let closestDist = this.attackRange;
@@ -324,12 +365,12 @@ class Request extends Entity {
     }
   }
 
-  /**
-   * Aplica daño al enemigo, considerando escudo si tiene.
-   * @param {number} amount - Cantidad de daño a aplicar
-   */
   takeDamage(amount) {
     this.hitFlash = 1.0;
+
+    if (this.teleports && Math.random() < 0.18) {
+      this._blinkForward(50);
+    }
 
     if (this.hasShield && this.shieldHp > 0) {
       if (amount <= this.shieldHp) {
@@ -486,6 +527,69 @@ class Request extends Entity {
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 1.5;
         ctx.strokeRect(-r * 0.8, -r * 0.8, r * 1.6, r * 1.6);
+        break;
+
+      case 'mitm':
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(r * 1.2, 0); ctx.lineTo(0, -r * 0.8);
+        ctx.lineTo(-r * 1.2, 0); ctx.lineTo(0, r * 0.8);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+
+      case 'worm':
+        for (let seg = 0; seg < 4; seg++) {
+          const segX = -seg * (r * 0.55);
+          const segY = Math.sin(this.animTimer * 2 + seg) * 3;
+          ctx.fillStyle = seg === 0 ? '#8be9fd' : '#bd93f9';
+          ctx.beginPath();
+          ctx.arc(segX, segY, r * (1 - seg * 0.18), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+
+      case 'supply_chain':
+        ctx.fillStyle = '#f1fa8c';
+        ctx.fillRect(-r, -r * 0.7, r * 2, r * 1.4);
+        ctx.strokeStyle = '#120716';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-r, -r * 0.7, r * 2, r * 1.4);
+        ctx.fillStyle = '#ff5555';
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+
+      case 'spectre':
+        ctx.strokeStyle = '#ff5555';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(r * 1.3, 0);
+        ctx.lineTo(-r * 0.8, -r * 0.8);
+        ctx.lineTo(-r * 0.2, 0);
+        ctx.lineTo(-r * 0.8, r * 0.8);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+
+      case 'prompt_injection':
+        ctx.fillStyle = '#50fa7b';
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.strokeText('<>', -5, 3);
         break;
 
       case 'normal':

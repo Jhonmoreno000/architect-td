@@ -6,8 +6,30 @@ const StorySystem = {
   activeChapter: null,
   isStoryMode: false,
   selectedDecisionIdx: null,
+  completedChapters: new Set(),
 
-  init() {},
+  init() {
+    try {
+      const saved = localStorage.getItem('architect_td_campaign_progress');
+      if (saved) {
+        this.completedChapters = new Set(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.warn('LocalStorage not available for campaign progress');
+    }
+  },
+
+  saveProgress(chapterId) {
+    this.completedChapters.add(chapterId);
+    try {
+      localStorage.setItem('architect_td_campaign_progress', JSON.stringify(Array.from(this.completedChapters)));
+    } catch (e) {}
+  },
+
+  isChapterUnlocked(chapterId) {
+    if (chapterId === 1) return true;
+    return this.completedChapters.has(chapterId - 1);
+  },
 
   startCampaignChapter(chapterId) {
     const chapter = STORY_CHAPTERS.find(c => c.id === chapterId);
@@ -113,5 +135,12 @@ const StorySystem = {
       }
     }
     GameState.updateUI();
+  },
+
+  onChapterVictory() {
+    if (!this.isStoryMode || !this.activeChapter) return;
+    this.saveProgress(this.activeChapter.id);
   }
 };
+
+StorySystem.init();
