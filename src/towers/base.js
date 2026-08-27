@@ -63,6 +63,7 @@ class Tower extends Entity {
     if (this.hp <= 0) {
       this.hp = 0;
       this.isCrashed = true;
+      GameState.statsCrashedTowers = (GameState.statsCrashedTowers || 0) + 1;
       AudioSystem.play('error');
       if (GameState.engine) {
         GameState.engine.triggerScreenShake(7);
@@ -248,6 +249,10 @@ class Tower extends Entity {
       GameState.engine.addParticles(this.x + this.size / 2, this.y + this.size / 2, this.color, 16, 'spark', 4);
       GameState.engine.addRingShockwave(this.x + this.size / 2, this.y + this.size / 2, this.color, this.range);
       GameState.engine.addFloatingText(this.x + this.size / 2, this.y - 12, `TIER ${this.level} SERVIDOR REPARADO & MEJORADO!`, this.color, 12, true);
+    }
+    if (typeof AchievementSystem !== 'undefined') {
+      AchievementSystem.check('tower_upgrade');
+      if (this.level >= 3) AchievementSystem.check('tower_max');
     }
     GameState.updateUI();
     return true;

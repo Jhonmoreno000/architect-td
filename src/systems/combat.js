@@ -28,6 +28,7 @@ const CombatSystem = {
 
     if (sourceTower) {
       sourceTower.damageDealt += finalDamage;
+      enemy.lastHitTower = sourceTower;
     }
 
     // Floating damage numbers
@@ -62,6 +63,10 @@ const CombatSystem = {
     if (GameState.shieldCharges > 0) {
       GameState.shieldCharges--;
       AudioSystem.play('zap');
+      GameState.statsShieldBlocks = (GameState.statsShieldBlocks || 0) + 1;
+      if (typeof AchievementSystem !== 'undefined') {
+        if (GameState.statsShieldBlocks >= 10) AchievementSystem.check('shield_save');
+      }
       if (GameState.engine) {
         GameState.engine.addFloatingText(GameState.engine.core.x, GameState.engine.core.y - 25, 'CLOUDFLARE ABSORBIÓ PAQUETE', '#00f0ff', 12, true);
         GameState.engine.addRingShockwave(GameState.engine.core.x, GameState.engine.core.y, '#00f0ff', 50);
@@ -97,6 +102,22 @@ const CombatSystem = {
     GameState.money += reward;
     GameState.score += scoreAdd;
     GameState.statsKills = (GameState.statsKills || 0) + 1;
+
+    // Track kills for the source tower
+    if (enemy.lastHitTower && typeof enemy.lastHitTower.kills !== 'undefined') {
+      enemy.lastHitTower.kills++;
+    }
+
+    // Achievement checks
+    if (typeof AchievementSystem !== 'undefined') {
+      if (GameState.statsKills === 1) AchievementSystem.check('first_blood');
+      if (GameState.statsKills >= 100) AchievementSystem.check('kill_100');
+      if (GameState.statsKills >= 500) AchievementSystem.check('kill_500');
+      if (this.combo >= 10) AchievementSystem.check('combo_10');
+      if (this.combo >= 25) AchievementSystem.check('combo_25');
+      if (GameState.money >= 1000) AchievementSystem.check('money_1000');
+      if (enemy.isBoss) AchievementSystem.check('boss_slain');
+    }
 
     // Check Loot Drop Chance (Memory Dump, Energy, Overclock)
     if (GameState.engine && Math.random() < GAME_CONFIG.lootDropChance) {

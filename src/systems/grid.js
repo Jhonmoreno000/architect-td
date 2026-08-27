@@ -38,6 +38,14 @@ const GridSystem = {
     const tower = TowerFactory.create(type, 0, 0);
     GameState.engine.placeTower(tower, gx, gy);
 
+    // Track tower types placed
+    if (GameState.statsTowersPlaced) {
+      GameState.statsTowersPlaced.add(type);
+      if (GameState.statsTowersPlaced.size >= 10 && typeof AchievementSystem !== 'undefined') {
+        AchievementSystem.check('all_towers_placed');
+      }
+    }
+
     AudioSystem.play('build');
     if (GameState.engine) {
       GameState.engine.addParticles(gx * 40 + 20, gy * 40 + 20, def.color, 14, 'spark', 3.5);

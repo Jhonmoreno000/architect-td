@@ -22,6 +22,7 @@ const WaveSystem = {
     this.waveActive = true;
     this.enemiesSpawned = 0;
     this.isBossWave = (this.wave % 5 === 0);
+    this.livesAtWaveStart = GameState.lives;
 
     if (this.isBossWave) {
       if (this.wave === 5) this.bossType = 'boss_syn';
@@ -101,6 +102,10 @@ const WaveSystem = {
     const earlyBonus = Math.round(this.prepTimer * 10);
     GameState.money += earlyBonus;
     GameState.score += earlyBonus * 2;
+    GameState.statsEarlyCalls = (GameState.statsEarlyCalls || 0) + 1;
+    if (typeof AchievementSystem !== 'undefined' && GameState.statsEarlyCalls >= 5) {
+      AchievementSystem.check('early_call');
+    }
     if (GameState.engine) {
       GameState.engine.addFloatingText(GameState.engine.canvas.width / 2, 90, `🚀 OLEADA LLAMADA! (+$${earlyBonus} BONUS)`, '#ffeb3b', 14, true);
     }
@@ -142,6 +147,16 @@ const WaveSystem = {
     // Check wave completion
     if (this.waveQueue.length === 0 && GameState.engine.enemies.length === 0) {
       this.waveActive = false;
+
+      // Achievement checks for wave milestones
+      if (typeof AchievementSystem !== 'undefined') {
+        if (this.wave >= 5) AchievementSystem.check('wave_5');
+        if (this.wave >= 10) AchievementSystem.check('wave_10');
+        if (this.wave >= 15) AchievementSystem.check('wave_15');
+        if (this.livesAtWaveStart !== undefined && GameState.lives >= this.livesAtWaveStart) {
+          AchievementSystem.check('perfect_wave');
+        }
+      }
 
       const isEndless = GameState.difficultySettings && GameState.difficultySettings.isEndless;
 
