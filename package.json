@@ -4,7 +4,8 @@
   "description": "Architect Tower Defense - Learn architecture patterns through gameplay",
   "scripts": {
     "dev": "tailwindcss -i ./src/input.css -o ./src/styles.css --watch",
-    "build": "tailwindcss -i ./src/input.css -o ./src/styles.css --minify"
+    "build": "tailwindcss -i ./src/input.css -o ./src/styles.css --minify",
+    "test": "node tests/suite.test.js"
   },
   "devDependencies": {
     "tailwindcss": "^3.4.0"
