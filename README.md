@@ -1,4 +1,4 @@
-# 🛡️ Architect Tower Defense (Architect TD)
+#  Architect Tower Defense (Architect TD)
 
 > **Juego táctico de defensa perimetral 360° y simulador pedagógico de arquitectura de software, DevOps, resiliencia y ciberseguridad.**
 
@@ -10,7 +10,7 @@
 
 ---
 
-## 📖 Descripción General
+##  Descripción General
 
 **Architect Tower Defense** es un juego de estrategia y simulación en tiempo real donde asumes el rol de **Staff SRE / Principal Architect**. 
 
@@ -20,7 +20,7 @@ Tu misión es diseñar una arquitectura resistente en capas (**Defense-in-Depth*
 
 ---
 
-## 🚀 Inicio Rápido con Docker
+##  Inicio Rápido con Docker
 
 El proyecto cuenta con una imagen multi-stage ultra ligera basada en `nginx:alpine` (menos de 25MB) lista para desplegarse en segundos.
 
@@ -50,7 +50,7 @@ docker run -d -p 8080:80 --name architect_td architect-td:latest
 
 ---
 
-## 💻 Desarrollo Local (Sin Docker)
+##  Desarrollo Local (Sin Docker)
 
 ```bash
 # 1. Instalar dependencias
@@ -67,22 +67,22 @@ npx serve .
 
 ---
 
-## 🎮 Mecánicas Principales de Juego
+##  Mecánicas Principales de Juego
 
-1. **🌐 Invasión Perimetral 360°:** Los enemigos aparecen aleatoriamente en los bordes de la red pública y avanzan hacia el Core central con física de enjambre orgánico y evasión suave de obstáculos.
-2. **❤️ Durabilidad y Reparación de Servidores `[R]`:** Cada servidor tiene puntos de salud (HP). Si los atacantes lo bombardean hasta 0 HP, queda **OFFLINE (500 Error)** y deja de disparar hasta ser reparado o mejorado.
-3. **🎯 Foco de Ataque Manual (Target Lock - Clic Derecho):** Haz clic derecho en cualquier amenaza para concentrar el fuego de todas las torres cercanas durante 5 segundos.
-4. **🚨 Incidentes SRE / PagerDuty (RCA Quizzes):** Cada 3 oleadas se desata un incidente arquitectónico real (*Cache Stampede, Cascading Failures, SYN Floods, etc.*) con recompensas y buffs si eliges la solución técnica adecuada.
-5. **📊 Dashboard de Observabilidad en Vivo:** Métricas en tiempo real de tráfico (RPS), latencia P99 (ms) y SLA Uptime (99.999%).
-6. **💾 Microchips y Orbes Coleccionables:** Enemigos destruidos sueltan *Memory Dumps (+$50)*, *Celdas de Energía (-15s Cooldowns)* y *Turbos de Overclocking*.
-7. **⚡ Habilidades Activas de DevOps:**
+1. ** Invasión Perimetral 360°:** Los enemigos aparecen aleatoriamente en los bordes de la red pública y avanzan hacia el Core central con física de enjambre orgánico y evasión suave de obstáculos.
+2. ** Durabilidad y Reparación de Servidores `[R]`:** Cada servidor tiene puntos de salud (HP). Si los atacantes lo bombardean hasta 0 HP, queda **OFFLINE (500 Error)** y deja de disparar hasta ser reparado o mejorado.
+3. ** Foco de Ataque Manual (Target Lock - Clic Derecho):** Haz clic derecho en cualquier amenaza para concentrar el fuego de todas las torres cercanas durante 5 segundos.
+4. ** Incidentes SRE / PagerDuty (RCA Quizzes):** Cada 3 oleadas se desata un incidente arquitectónico real (*Cache Stampede, Cascading Failures, SYN Floods, etc.*) con recompensas y buffs si eliges la solución técnica adecuada.
+5. ** Dashboard de Observabilidad en Vivo:** Métricas en tiempo real de tráfico (RPS), latencia P99 (ms) y SLA Uptime (99.999%).
+6. ** Microchips y Orbes Coleccionables:** Enemigos destruidos sueltan *Memory Dumps (+$50)*, *Celdas de Energía (-15s Cooldowns)* y *Turbos de Overclocking*.
+7. ** Habilidades Activas de DevOps:**
    - **`[Q]` Auto-Scale HPA:** Duplica la velocidad de disparo de todos los servidores por 6s.
    - **`[W]` DDoS Shield:** El Core absorbe 5 pérdidas sin reducir vidas.
    - **`[E]` kill -9 EMP:** Pulso destructivo que aturde a todas las amenazas en pantalla.
 
 ---
 
-## 🏗️ Módulos de Arquitectura (Torres Defensivas)
+##  Módulos de Arquitectura (Torres Defensivas)
 
 | Módulo | Tipo | Icono | Rol / Patrón de Arquitectura | Herramientas Reales |
 | :--- | :--- | :---: | :--- | :--- |
@@ -99,7 +99,7 @@ npx serve .
 
 ---
 
-## 👾 Tipos de Amenazas Cibernéticas & Jefes
+##  Tipos de Amenazas Cibernéticas & Jefes
 
 - **GET Request (`GET`):** Tráfico estándar de prueba con dardos L7.
 - **POST Payload (`POST`):** Carga pesada blindada que lanza bombas de corrupción en área.
@@ -116,7 +116,7 @@ npx serve .
 
 ---
 
-## 🗺️ Topologías y Mecánicas de Nivel
+##  Topologías y Mecánicas de Nivel
 
 1. **Nivel 1: El Data Center Central (Perímetro 360°)** - Defensa en capas concéntrica DMZ.
 2. **Nivel 2: Malla Activa-Activa** - Haz láser continuo de sincronización de datos entre nodos que desintegra amenazas.
@@ -126,7 +126,7 @@ npx serve .
 
 ---
 
-## ⌨️ Atajos de Teclado y Controles
+##  Atajos de Teclado y Controles
 
 | Tecla | Acción |
 | :---: | :--- |
@@ -143,7 +143,7 @@ npx serve .
 
 ---
 
-## 📁 Estructura del Proyecto
+##  Estructura del Proyecto
 
 ```
 architect-td/
