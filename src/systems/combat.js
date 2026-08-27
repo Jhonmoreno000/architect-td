@@ -2,10 +2,31 @@
 // SYSTEMS - Combat, DevOps Abilities & Loot Drop Engine
 // ============================================
 
+/**
+ * CombatSystem - Sistema central de combate, habilidades DevOps y loot drops.
+ *
+ * Responsabilidades:
+ * - dealDamage(): Aplica daño con crits (12% chance, 1.6x), bonus de tipo, y overclock
+ * - applyAreaDamage(): Daño en área con falloff radial
+ * - handleEnemyReached(): Reduce vidas cuando un enemigo llega al core
+ * - handleEnemyKilled(): Otorga dinero, score, combo bonus, loot drops, y checkea achievements
+ * - triggerAbility(): Activa habilidades DevOps (autoscale, shield, reboot)
+ *
+ * Combo system: Kill streaks dan bonus de score progresivo (hasta 2.0x)
+ *
+ * @namespace CombatSystem
+ */
 const CombatSystem = {
   combo: 0,
   comboTimer: 0,
 
+  /**
+   * Aplica daño a un enemigo con crits y bonuses.
+   * @param {Request} enemy - Enemigo objetivo
+   * @param {number} amount - Daño base
+   * @param {string} [color='#00ff41'] - Color del floating text
+   * @param {Object} [sourceTower=null] - Torre origen (para tracking y bonuses)
+   */
   dealDamage(enemy, amount, color = '#00ff41', sourceTower = null) {
     if (!enemy || !enemy.alive) return;
 
@@ -28,6 +49,7 @@ const CombatSystem = {
 
     if (sourceTower) {
       sourceTower.damageDealt += finalDamage;
+      enemy.lastHitTower = sourceTower;
     }
 
     // Floating damage numbers
@@ -58,10 +80,19 @@ const CombatSystem = {
     }
   },
 
+  /**
+   * Maneja cuando un enemigo llega al core.
+   * Aplica daño de vidas, considera escudo activo, y verifica game over.
+   * @param {Request} enemy - Enemigo que llegó
+   */
   handleEnemyReached(enemy) {
     if (GameState.shieldCharges > 0) {
       GameState.shieldCharges--;
       AudioSystem.play('zap');
+      GameState.statsShieldBlocks = (GameState.statsShieldBlocks || 0) + 1;
+      if (typeof AchievementSystem !== 'undefined') {
+        if (GameState.statsShieldBlocks >= 10) AchievementSystem.check('shield_save');
+      }
       if (GameState.engine) {
         GameState.engine.addFloatingText(GameState.engine.core.x, GameState.engine.core.y - 25, 'CLOUDFLARE ABSORBIÓ PAQUETE', '#00f0ff', 12, true);
         GameState.engine.addRingShockwave(GameState.engine.core.x, GameState.engine.core.y, '#00f0ff', 50);
@@ -86,6 +117,10 @@ const CombatSystem = {
     }
   },
 
+  /**
+   * Maneja la muerte de un enemigo: otorga recompensas, combo, loot, y checkea logros.
+   * @param {Request} enemy - Enemigo que murió
+   */
   handleEnemyKilled(enemy) {
     this.combo++;
     this.comboTimer = 120;
@@ -97,6 +132,22 @@ const CombatSystem = {
     GameState.money += reward;
     GameState.score += scoreAdd;
     GameState.statsKills = (GameState.statsKills || 0) + 1;
+
+    // Track kills for the source tower
+    if (enemy.lastHitTower && typeof enemy.lastHitTower.kills !== 'undefined') {
+      enemy.lastHitTower.kills++;
+    }
+
+    // Achievement checks
+    if (typeof AchievementSystem !== 'undefined') {
+      if (GameState.statsKills === 1) AchievementSystem.check('first_blood');
+      if (GameState.statsKills >= 100) AchievementSystem.check('kill_100');
+      if (GameState.statsKills >= 500) AchievementSystem.check('kill_500');
+      if (this.combo >= 10) AchievementSystem.check('combo_10');
+      if (this.combo >= 25) AchievementSystem.check('combo_25');
+      if (GameState.money >= 1000) AchievementSystem.check('money_1000');
+      if (enemy.isBoss) AchievementSystem.check('boss_slain');
+    }
 
     // Check Loot Drop Chance (Memory Dump, Energy, Overclock)
     if (GameState.engine && Math.random() < GAME_CONFIG.lootDropChance) {
@@ -129,6 +180,10 @@ const CombatSystem = {
     GameState.updateUI();
   },
 
+  /**
+   * Activa una habilidad DevOps por ID.
+   * @param {string} abilityId - 'autoscale' | 'shield' | 'reboot'
+   */
   triggerAbility(abilityId) {
     if (!GameState.gameStarted || GameState.isGameOver || GameState.paused) return;
 

@@ -62,6 +62,11 @@ const GameState = {
     this.paused = false;
     this.selectedTower = null;
     this.selectedPlacedTower = null;
+    this.statsKills = 0;
+    this.statsShieldBlocks = 0;
+    this.statsEarlyCalls = 0;
+    this.statsTowersPlaced = new Set();
+    this.statsCrashedTowers = 0;
 
     this.abilityCooldowns = { autoscale: 0, shield: 0, reboot: 0 };
     this.activeAbilities = { autoscale: 0, shield: 0, reboot: 0 };
@@ -70,6 +75,17 @@ const GameState = {
     WaveSystem.maxWaves = this.currentLevel.maxWaves;
     Shop.init();
     HUD.init();
+
+    // Init minimap
+    if (typeof MinimapSystem !== 'undefined') {
+      MinimapSystem.init();
+    }
+
+    // Reset achievements
+    if (typeof AchievementSystem !== 'undefined') {
+      AchievementSystem.reset();
+    }
+
     this.updateUI();
 
     WaveSystem.startWave();
@@ -112,6 +128,12 @@ const GameState = {
     this.isGameOver = true;
     this.engine.stop();
     AudioSystem.play('wave');
+    if (typeof AchievementSystem !== 'undefined') {
+      AchievementSystem.check('victory');
+      if (!this.statsCrashedTowers || this.statsCrashedTowers === 0) {
+        AchievementSystem.check('no_crash');
+      }
+    }
     EventHandlers.showVictory(this.score);
   },
 

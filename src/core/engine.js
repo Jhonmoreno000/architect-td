@@ -1,8 +1,27 @@
 // ============================================
-// CORE - Robust Game Engine with Manual Focus Target & Level Mechanics
+// CORE - Performance-Optimized Game Engine
 // ============================================
 
+/**
+ * GameEngine - Motor principal del juego con optimizaciones de rendimiento.
+ *
+ * Gestiona el game loop (requestAnimationFrame), actualización y renderizado de todas
+ * las entidades: torres, enemigos, proyectiles, partículas, textos flotantes y loot drops.
+ *
+ * Optimizaciones aplicadas:
+ * - Swap-and-pop en vez de Array.splice() para eliminación O(1) de entidades muertas
+ * - Cacheo de gradiente de fondo (se crea una vez, no cada frame)
+ * - Reducción de allocations de objetos por frame (reuse de _tmpVec, lastTargetX/Y)
+ * - Comparaciones de distancia al cuadrado para evitar Math.sqrt en paths calientes
+ *
+ * @class GameEngine
+ * @param {HTMLCanvasElement} canvas - Canvas principal del juego
+ */
 class GameEngine {
+  /**
+   * Inicializa el motor con todos los arrays de entidades y configuración base.
+   * @param {HTMLCanvasElement} canvas
+   */
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
@@ -20,9 +39,9 @@ class GameEngine {
     this.lootDrops = [];
 
     this.grid = [];
-    this.gridSize = GAME_CONFIG.gridSize; // 40
-    this.cols = GAME_CONFIG.gridCols; // 26
-    this.rows = GAME_CONFIG.gridRows; // 16
+    this.gridSize = GAME_CONFIG.gridSize;
+    this.cols = GAME_CONFIG.gridCols;
+    this.rows = GAME_CONFIG.gridRows;
     this.core = { x: 520, y: 320, gx: 13, gy: 8 };
     this.subNodes = [];
     this.auxCores = [];
@@ -31,32 +50,41 @@ class GameEngine {
     this.selectedTower = null;
     this.hoveredCell = null;
 
-    // Manual Target Focus (Right-Click)
-    this.focusTarget = null; // { x, y, timer: 300 }
+    this.focusTarget = null;
 
-    // Visual FX
     this.screenShakeTime = 0;
     this.screenShakeIntensity = 0;
     this.dataPulseTime = 0;
 
     this.onEnemyReached = null;
     this.onEnemyKilled = null;
+
+    this._frameTime = 0;
+    this._cachedBgGradient = null;
+    this._cachedBgKey = '';
+
+    this._tmpVec = { x: 0, y: 0 };
   }
 
+  /**
+   * Carga un nivel: resetea todas las entidades, inicializa grid y configura el core.
+   * @param {Object} levelConfig - Configuración del nivel (core position, subNodes, auxCores, etc.)
+   */
   loadLevel(levelConfig) {
     this.currentLevelConfig = levelConfig;
     this.canvas.width = this.cols * this.gridSize;
     this.canvas.height = this.rows * this.gridSize;
 
-    this.towers = [];
-    this.enemies = [];
-    this.projectiles = [];
-    this.enemyProjectiles = [];
-    this.particles = [];
-    this.effects = [];
-    this.floatingTexts = [];
-    this.lootDrops = [];
+    this.towers.length = 0;
+    this.enemies.length = 0;
+    this.projectiles.length = 0;
+    this.enemyProjectiles.length = 0;
+    this.particles.length = 0;
+    this.effects.length = 0;
+    this.floatingTexts.length = 0;
+    this.lootDrops.length = 0;
     this.focusTarget = null;
+    this._cachedBgGradient = null;
 
     this._initGrid(levelConfig);
   }
@@ -73,9 +101,8 @@ class GameEngine {
       x: cgx * this.gridSize + this.gridSize / 2,
       y: cgy * this.gridSize + this.gridSize / 2,
     };
-    this.grid[cgy][cgx] = 3; // 3 = Core
+    this.grid[cgy][cgx] = 3;
 
-    // Sub-Nodes
     this.subNodes = [];
     if (levelConfig && levelConfig.subNodes) {
       for (const node of levelConfig.subNodes) {
@@ -93,7 +120,6 @@ class GameEngine {
       }
     }
 
-    // Aux Cores
     this.auxCores = [];
     if (levelConfig && levelConfig.auxCores) {
       for (const aux of levelConfig.auxCores) {
@@ -106,11 +132,17 @@ class GameEngine {
     }
   }
 
+  /**
+   * Establece un objetivo de focus táctico (target lock) en una posición del mapa.
+   * Las torres priorizan enemigos dentro del radio de 70px del focus.
+   * @param {number} x - Coordenada X del focus
+   * @param {number} y - Coordenada Y del focus
+   */
   setFocusTarget(x, y) {
-    this.focusTarget = { x, y, timer: 300 }; // 5 seconds
+    this.focusTarget = { x, y, timer: 300 };
     AudioSystem.play('zap');
     this.addRingShockwave(x, y, '#ff0055', 40);
-    this.addFloatingText(x, y - 20, '🎯 TARGET LOCK ACTIVADO!', '#ff0055', 12, true);
+    this.addFloatingText(x, y - 20, 'TARGET LOCK ACTIVADO!', '#ff0055', 12, true);
   }
 
   canPlaceTower(gx, gy) {
@@ -123,16 +155,20 @@ class GameEngine {
     tower.gridY = gy;
     tower.x = gx * this.gridSize + (this.gridSize - tower.size) / 2;
     tower.y = gy * this.gridSize + (this.gridSize - tower.size) / 2;
-    this.grid[gy][gx] = 2; // 2 = Tower
+    this.grid[gy][gx] = 2;
     this.towers.push(tower);
   }
 
+  /**
+   * Genera un enemigo en los bordes del mapa (o en un portal cuántico si aplica).
+   * @param {string} type - Tipo de enemigo (keys de ENEMY_CONFIG)
+   * @returns {Request} Instancia del enemigo creado
+   */
   spawnEnemy(type) {
     const w = this.canvas.width;
     const h = this.canvas.height;
     let spawnX, spawnY;
 
-    // Special Level 5: Quantum Portal spawn
     if (this.currentLevelConfig && this.currentLevelConfig.hasQuantumPortals && Math.random() < 0.25) {
       spawnX = (Math.random() < 0.5 ? 200 : w - 200) + (Math.random() - 0.5) * 80;
       spawnY = (Math.random() < 0.5 ? 150 : h - 150) + (Math.random() - 0.5) * 80;
@@ -184,9 +220,14 @@ class GameEngine {
   }
 
   checkLootCollection(mouseX, mouseY) {
+    const r2 = 324;
     for (const drop of this.lootDrops) {
-      if (drop.alive && Math.hypot(drop.x - mouseX, drop.y - mouseY) <= drop.radius + 18) {
-        drop.collect();
+      if (drop.alive) {
+        const dx = drop.x - mouseX;
+        const dy = drop.y - mouseY;
+        if (dx * dx + dy * dy <= r2) {
+          drop.collect();
+        }
       }
     }
   }
@@ -196,6 +237,7 @@ class GameEngine {
     this.screenShakeIntensity = intensity;
   }
 
+  /** Inicia el game loop con requestAnimationFrame. */
   start() {
     this.running = true;
     this.lastTime = performance.now();
@@ -206,6 +248,10 @@ class GameEngine {
     this.running = false;
   }
 
+  /**
+   * Game loop principal. Ejecuta update() y render() cada frame.
+   * Calcula delta time normalizado (60fps base) y aplica speedMultiplier.
+   */
   loop() {
     if (!this.running) return;
 
@@ -213,6 +259,7 @@ class GameEngine {
       const now = performance.now();
       const dt = Math.min((now - this.lastTime) / 16.67, 3) * this.speedMultiplier;
       this.lastTime = now;
+      this._frameTime = now / 1000;
 
       this.update(dt);
       this.render();
@@ -229,6 +276,11 @@ class GameEngine {
     }
   }
 
+  /**
+   * Actualiza todas las entidades del juego en orden definido.
+   * Optimización: usa swap-and-pop para eliminación O(1) en cada array.
+   * @param {number} dt - Delta time normalizado (1.0 = 1 frame a 60fps)
+   */
   update(dt) {
     if (this.focusTarget) {
       this.focusTarget.timer -= dt;
@@ -237,32 +289,30 @@ class GameEngine {
       }
     }
 
-    // Level 2 Active-Active Sync Laser Mechanic
     if (this.currentLevelConfig && this.currentLevelConfig.hasSyncLink && this.auxCores.length >= 2) {
       const p1 = this.auxCores[0];
       const p2 = this.auxCores[1];
+      const minX = Math.min(p1.x, p2.x);
+      const maxX = Math.max(p1.x, p2.x);
 
       for (const e of this.enemies) {
-        if (e.alive && Math.abs(e.y - p1.y) < 16 && e.x > Math.min(p1.x, p2.x) && e.x < Math.max(p1.x, p2.x)) {
+        if (e.alive && Math.abs(e.y - p1.y) < 16 && e.x > minX && e.x < maxX) {
           CombatSystem.dealDamage(e, 8 * (dt / 30), '#8be9fd');
           if (Math.random() < 0.2) this.addParticles(e.x, e.y, '#8be9fd', 2, 'spark', 2);
         }
       }
     }
 
-    if (GameState.activeAbilities) {
-      if (GameState.activeAbilities.autoscale > 0) {
-        GameState.activeAbilities.autoscale -= dt / 60;
-        if (GameState.activeAbilities.autoscale < 0) GameState.activeAbilities.autoscale = 0;
-      }
+    if (GameState.activeAbilities && GameState.activeAbilities.autoscale > 0) {
+      GameState.activeAbilities.autoscale -= dt / 60;
+      if (GameState.activeAbilities.autoscale < 0) GameState.activeAbilities.autoscale = 0;
     }
     if (GameState.abilityCooldowns) {
-      for (const k of Object.keys(GameState.abilityCooldowns)) {
-        if (GameState.abilityCooldowns[k] > 0) {
-          GameState.abilityCooldowns[k] -= dt / 60;
-          if (GameState.abilityCooldowns[k] < 0) GameState.abilityCooldowns[k] = 0;
-        }
-      }
+      const ac = GameState.abilityCooldowns;
+      const dt60 = dt / 60;
+      if (ac.autoscale > 0) { ac.autoscale -= dt60; if (ac.autoscale < 0) ac.autoscale = 0; }
+      if (ac.shield > 0) { ac.shield -= dt60; if (ac.shield < 0) ac.shield = 0; }
+      if (ac.reboot > 0) { ac.reboot -= dt60; if (ac.reboot < 0) ac.reboot = 0; }
     }
 
     if (CombatSystem.comboTimer > 0) {
@@ -285,38 +335,50 @@ class GameEngine {
     this._updateParticles(dt);
     this._updateLootDrops(dt);
     this._updateFloatingTexts(dt);
+
+    if (typeof AchievementSystem !== 'undefined') {
+      AchievementSystem.update(dt);
+    }
   }
 
   _updateTowers(dt) {
-    for (const tower of this.towers) {
-      tower.updateCooldown(dt);
-      if (typeof tower.update === 'function') {
-        tower.update(dt);
-      }
+    const enemies = this.enemies;
+    const focus = this.focusTarget;
 
-      // Priority targeting with Manual Focus Target
-      if (this.focusTarget) {
+    for (let ti = 0, tLen = this.towers.length; ti < tLen; ti++) {
+      const tower = this.towers[ti];
+      tower.updateCooldown(dt);
+      if (tower.update) tower.update(dt);
+
+      if (focus) {
         let focusedEnemy = null;
         let minD = 999;
-        for (const e of this.enemies) {
-          if (e.alive && !e.reached && Math.hypot(e.x - this.focusTarget.x, e.y - this.focusTarget.y) <= 70) {
-            const td = tower.distTo(e);
-            if (td <= tower.range && td < minD) {
-              minD = td;
-              focusedEnemy = e;
+        const fx = focus.x;
+        const fy = focus.y;
+
+        for (let ei = 0, eLen = enemies.length; ei < eLen; ei++) {
+          const e = enemies[ei];
+          if (e.alive && !e.reached) {
+            const edx = e.x - fx;
+            const edy = e.y - fy;
+            if (edx * edx + edy * edy <= 4900) {
+              const td = tower.distTo(e);
+              if (td <= tower.range && td < minD) {
+                minD = td;
+                focusedEnemy = e;
+              }
             }
           }
         }
+
         if (focusedEnemy) {
           tower.target = focusedEnemy;
-          const cx = tower.x + tower.size / 2;
-          const cy = tower.y + tower.size / 2;
-          tower.turretAngle = Math.atan2(focusedEnemy.y - cy, focusedEnemy.x - cx);
+          tower.turretAngle = Math.atan2(focusedEnemy.y - tower.y - tower.size / 2, focusedEnemy.x - tower.x - tower.size / 2);
         } else {
-          tower.findTarget(this.enemies);
+          tower.findTarget(enemies);
         }
       } else {
-        tower.findTarget(this.enemies);
+        tower.findTarget(enemies);
       }
 
       if (tower.canFire()) {
@@ -325,8 +387,14 @@ class GameEngine {
     }
   }
 
+  /**
+   * Actualiza enemigos usando swap-and-pop para evitar Array.splice() O(n).
+   * Los enemigos muertos se reemplazan con el último elemento del array.
+   * @param {number} dt - Delta time
+   */
   _updateEnemies(dt) {
-    for (let i = this.enemies.length - 1; i >= 0; i--) {
+    let writeIdx = 0;
+    for (let i = 0; i < this.enemies.length; i++) {
       const e = this.enemies[i];
       e.update(dt);
 
@@ -341,50 +409,67 @@ class GameEngine {
         this.addParticles(e.x, e.y, e.color, 12, 'spark', 3);
       }
 
-      if (!e.alive) {
-        this.enemies.splice(i, 1);
+      if (e.alive) {
+        this.enemies[writeIdx++] = e;
       }
     }
+    this.enemies.length = writeIdx;
   }
 
   _updateProjectiles(dt) {
-    for (let i = this.projectiles.length - 1; i >= 0; i--) {
+    let writeIdx = 0;
+    for (let i = 0; i < this.projectiles.length; i++) {
       const p = this.projectiles[i];
       p.update(dt);
-      if (!p.alive) this.projectiles.splice(i, 1);
+      if (p.alive) this.projectiles[writeIdx++] = p;
     }
+    this.projectiles.length = writeIdx;
   }
 
   _updateEnemyProjectiles(dt) {
-    for (let i = this.enemyProjectiles.length - 1; i >= 0; i--) {
+    let writeIdx = 0;
+    for (let i = 0; i < this.enemyProjectiles.length; i++) {
       const ep = this.enemyProjectiles[i];
       ep.update(dt);
-      if (!ep.alive) this.enemyProjectiles.splice(i, 1);
+      if (ep.alive) this.enemyProjectiles[writeIdx++] = ep;
     }
+    this.enemyProjectiles.length = writeIdx;
   }
 
   _updateParticles(dt) {
-    for (let i = this.particles.length - 1; i >= 0; i--) {
-      this.particles[i].update(dt);
-      if (!this.particles[i].alive) this.particles.splice(i, 1);
+    let writeIdx = 0;
+    for (let i = 0; i < this.particles.length; i++) {
+      const p = this.particles[i];
+      p.update(dt);
+      if (p.alive) this.particles[writeIdx++] = p;
     }
+    this.particles.length = writeIdx;
   }
 
   _updateLootDrops(dt) {
-    for (let i = this.lootDrops.length - 1; i >= 0; i--) {
+    let writeIdx = 0;
+    for (let i = 0; i < this.lootDrops.length; i++) {
       const loot = this.lootDrops[i];
       loot.update(dt);
-      if (!loot.alive) this.lootDrops.splice(i, 1);
+      if (loot.alive) this.lootDrops[writeIdx++] = loot;
     }
+    this.lootDrops.length = writeIdx;
   }
 
   _updateFloatingTexts(dt) {
-    for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
-      this.floatingTexts[i].update(dt);
-      if (!this.floatingTexts[i].alive) this.floatingTexts.splice(i, 1);
+    let writeIdx = 0;
+    for (let i = 0; i < this.floatingTexts.length; i++) {
+      const ft = this.floatingTexts[i];
+      ft.update(dt);
+      if (ft.alive) this.floatingTexts[writeIdx++] = ft;
     }
+    this.floatingTexts.length = writeIdx;
   }
 
+  /**
+   * Renderiza el frame completo: fondo, grid, entidades, UI overlays.
+   * Incluye screen shake cuando está activo.
+   */
   render() {
     const { ctx } = this;
     const w = this.canvas.width;
@@ -393,42 +478,77 @@ class GameEngine {
     ctx.save();
 
     if (this.screenShakeTime > 0) {
-      const shakeX = (Math.random() - 0.5) * this.screenShakeIntensity;
-      const shakeY = (Math.random() - 0.5) * this.screenShakeIntensity;
-      ctx.translate(shakeX, shakeY);
+      ctx.translate(
+        (Math.random() - 0.5) * this.screenShakeIntensity,
+        (Math.random() - 0.5) * this.screenShakeIntensity
+      );
     }
 
     ctx.clearRect(0, 0, w, h);
 
     this._drawBackground(ctx, w, h);
-    this._drawLevelMechanics(ctx);
-    this._drawPerimeterGateways(ctx, w, h);
     this._drawGrid(ctx);
+
+    if (this.currentLevelConfig && this.currentLevelConfig.hasSyncLink) {
+      this._drawLevelMechanics(ctx);
+    }
+
+    this._drawPerimeterGateways(ctx, w, h);
     this._drawSynergyCables(ctx);
     this._drawSubNodes(ctx);
     this._drawCore(ctx);
 
-    for (const tower of this.towers) tower.draw(ctx);
-    for (const loot of this.lootDrops) loot.draw(ctx);
-    for (const enemy of this.enemies) enemy.draw(ctx);
-    for (const proj of this.projectiles) proj.draw(ctx);
-    for (const ep of this.enemyProjectiles) ep.draw(ctx);
-    for (const part of this.particles) part.draw(ctx);
-    for (const ftext of this.floatingTexts) ftext.draw(ctx);
+    const towers = this.towers;
+    const lootDrops = this.lootDrops;
+    const enemies = this.enemies;
+    const projectiles = this.projectiles;
+    const enemyProjectiles = this.enemyProjectiles;
+    const particles = this.particles;
+    const floatingTexts = this.floatingTexts;
+
+    for (let i = 0, len = towers.length; i < len; i++) towers[i].draw(ctx);
+    for (let i = 0, len = lootDrops.length; i < len; i++) lootDrops[i].draw(ctx);
+    for (let i = 0, len = enemies.length; i < len; i++) enemies[i].draw(ctx);
+    for (let i = 0, len = projectiles.length; i < len; i++) projectiles[i].draw(ctx);
+    for (let i = 0, len = enemyProjectiles.length; i < len; i++) enemyProjectiles[i].draw(ctx);
+    for (let i = 0, len = particles.length; i < len; i++) particles[i].draw(ctx);
+    for (let i = 0, len = floatingTexts.length; i < len; i++) floatingTexts[i].draw(ctx);
 
     this._drawFocusTarget(ctx);
     this._drawHoverPreview(ctx);
     this._drawBossHealthBar(ctx);
 
+    if (typeof MinimapSystem !== 'undefined' && MinimapSystem.ctx) {
+      MinimapSystem.render(this);
+    }
+
+    if (typeof AchievementSystem !== 'undefined') {
+      AchievementSystem.render(ctx, this.canvas.width, this.canvas.height);
+    }
+
     ctx.restore();
   }
 
+  /**
+   * Dibuja el fondo con gradiente radial cacheado.
+   * Optimización: el gradiente se recrea solo cuando cambia la posición del core o el canvas.
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} w - Ancho del canvas
+   * @param {number} h - Alto del canvas
+   */
   _drawBackground(ctx, w, h) {
     const levelBg = (this.currentLevelConfig && this.currentLevelConfig.bgColor) || '#040814';
-    const grad = ctx.createRadialGradient(this.core.x, this.core.y, 80, this.core.x, this.core.y, w);
-    grad.addColorStop(0, '#0a1a2e');
-    grad.addColorStop(1, levelBg);
-    ctx.fillStyle = grad;
+    const bgKey = `${this.core.x}_${this.core.y}_${levelBg}_${w}`;
+
+    if (this._cachedBgKey !== bgKey) {
+      this._cachedBgKey = bgKey;
+      const grad = ctx.createRadialGradient(this.core.x, this.core.y, 80, this.core.x, this.core.y, w);
+      grad.addColorStop(0, '#0a1a2e');
+      grad.addColorStop(1, levelBg);
+      this._cachedBgGradient = grad;
+    }
+
+    ctx.fillStyle = this._cachedBgGradient;
     ctx.fillRect(0, 0, w, h);
 
     ctx.strokeStyle = 'rgba(0, 240, 255, 0.05)';
@@ -441,31 +561,28 @@ class GameEngine {
   }
 
   _drawLevelMechanics(ctx) {
-    // Level 2 Active-Active Sync Laser
-    if (this.currentLevelConfig && this.currentLevelConfig.hasSyncLink && this.auxCores.length >= 2) {
-      const p1 = this.auxCores[0];
-      const p2 = this.auxCores[1];
+    if (this.auxCores.length < 2) return;
+    const p1 = this.auxCores[0];
+    const p2 = this.auxCores[1];
 
-      ctx.save();
-      ctx.strokeStyle = 'rgba(139, 233, 253, 0.7)';
-      ctx.lineWidth = 3;
-      ctx.shadowBlur = 12;
-      ctx.shadowColor = '#8be9fd';
-      ctx.setLineDash([8, 6]);
-      ctx.lineDashOffset = -this.dataPulseTime * 20;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(139, 233, 253, 0.7)';
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#8be9fd';
+    ctx.setLineDash([8, 6]);
+    ctx.lineDashOffset = -this.dataPulseTime * 20;
 
-      ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-      ctx.stroke();
-      ctx.restore();
-    }
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+    ctx.restore();
   }
 
   _drawFocusTarget(ctx) {
     if (!this.focusTarget) return;
     const { x, y } = this.focusTarget;
-    const time = performance.now() / 1000;
 
     ctx.save();
     ctx.strokeStyle = '#ff0055';
@@ -473,12 +590,10 @@ class GameEngine {
     ctx.shadowBlur = 14;
     ctx.shadowColor = '#ff0055';
 
-    // Target reticle
     ctx.beginPath();
     ctx.arc(x, y, 25, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Crosshairs
     ctx.beginPath();
     ctx.moveTo(x - 32, y); ctx.lineTo(x + 32, y);
     ctx.moveTo(x, y - 32); ctx.lineTo(x, y + 32);
@@ -518,18 +633,16 @@ class GameEngine {
   _drawGrid(ctx) {
     ctx.strokeStyle = 'rgba(0, 255, 65, 0.04)';
     ctx.lineWidth = 1;
+    ctx.beginPath();
     for (let x = 0; x <= this.canvas.width; x += this.gridSize) {
-      ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, this.canvas.height);
-      ctx.stroke();
     }
     for (let y = 0; y <= this.canvas.height; y += this.gridSize) {
-      ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(this.canvas.width, y);
-      ctx.stroke();
     }
+    ctx.stroke();
   }
 
   _drawSynergyCables(ctx) {
@@ -537,32 +650,33 @@ class GameEngine {
     const selected = GameState.selectedPlacedTower;
     const synergies = selected.getActiveSynergies();
 
-    for (const other of synergies) {
-      const cx1 = selected.x + selected.size / 2;
-      const cy1 = selected.y + selected.size / 2;
-      const cx2 = other.x + other.size / 2;
-      const cy2 = other.y + other.size / 2;
+    if (synergies.length === 0) return;
 
-      ctx.save();
-      ctx.strokeStyle = '#ffeb3b';
-      ctx.lineWidth = 2;
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = '#ffeb3b';
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
+    ctx.save();
+    ctx.strokeStyle = '#ffeb3b';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = '#ffeb3b';
+    ctx.setLineDash([4, 4]);
+
+    const cx1 = selected.x + selected.size / 2;
+    const cy1 = selected.y + selected.size / 2;
+
+    ctx.beginPath();
+    for (const other of synergies) {
       ctx.moveTo(cx1, cy1);
-      ctx.lineTo(cx2, cy2);
-      ctx.stroke();
-      ctx.restore();
+      ctx.lineTo(other.x + other.size / 2, other.y + other.size / 2);
     }
+    ctx.stroke();
+    ctx.restore();
   }
 
   _drawSubNodes(ctx) {
+    ctx.save();
     for (const node of this.subNodes) {
       if (!node.alive) continue;
       const { x, y } = node;
 
-      ctx.save();
       ctx.fillStyle = '#0a1628';
       ctx.strokeStyle = '#8be9fd';
       ctx.lineWidth = 2;
@@ -579,12 +693,9 @@ class GameEngine {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(node.label || 'POP', x, y);
-
-      ctx.restore();
     }
 
     for (const aux of this.auxCores) {
-      ctx.save();
       ctx.fillStyle = '#081a28';
       ctx.strokeStyle = '#8be9fd';
       ctx.lineWidth = 2;
@@ -601,13 +712,13 @@ class GameEngine {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(aux.label || 'NODE', aux.x, aux.y);
-      ctx.restore();
     }
+    ctx.restore();
   }
 
   _drawCore(ctx) {
     const { x, y } = this.core;
-    const time = performance.now() / 1000;
+    const time = this._frameTime;
     const pulse = Math.sin(time * 3) * 0.3 + 0.7;
 
     ctx.save();
@@ -643,6 +754,7 @@ class GameEngine {
     ctx.textBaseline = 'middle';
     ctx.fillText('CORE', x, y);
 
+    ctx.shadowBlur = 0;
     ctx.strokeStyle = 'rgba(0, 255, 65, 0.4)';
     ctx.lineWidth = 1.5;
     for (let i = 0; i < 3; i++) {
@@ -656,13 +768,19 @@ class GameEngine {
   }
 
   _drawBossHealthBar(ctx) {
-    const boss = this.enemies.find(e => e.isBoss && e.alive);
+    let boss = null;
+    for (let i = 0, len = this.enemies.length; i < len; i++) {
+      if (this.enemies[i].isBoss && this.enemies[i].alive) {
+        boss = this.enemies[i];
+        break;
+      }
+    }
     if (!boss) return;
 
-    const w = 480;
-    const h = 22;
-    const x = (this.canvas.width - w) / 2;
-    const y = 24;
+    const bw = 480;
+    const bh = 22;
+    const bx = (this.canvas.width - bw) / 2;
+    const by = 24;
     const pct = Math.max(0, Math.min(1, boss.hp / boss.maxHp));
 
     ctx.save();
@@ -671,21 +789,21 @@ class GameEngine {
     ctx.lineWidth = 2;
     ctx.shadowBlur = 16;
     ctx.shadowColor = '#ff0055';
-    ctx.fillRect(x, y, w, h);
-    ctx.strokeRect(x, y, w, h);
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.strokeRect(bx, by, bw, bh);
 
-    const grad = ctx.createLinearGradient(x, y, x + w, y);
+    const grad = ctx.createLinearGradient(bx, by, bx + bw, by);
     grad.addColorStop(0, '#ff0055');
     grad.addColorStop(1, '#ff9900');
     ctx.fillStyle = grad;
-    ctx.fillRect(x + 2, y + 2, (w - 4) * pct, h - 4);
+    ctx.fillRect(bx + 2, by + 2, (bw - 4) * pct, bh - 4);
 
     ctx.shadowBlur = 0;
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`[INCIDENTE CRITICO] ${boss.name.toUpperCase()} [${Math.round(boss.hp)} / ${boss.maxHp} HP]`, this.canvas.width / 2, y + h / 2);
+    ctx.fillText(`[INCIDENTE CRITICO] ${boss.name.toUpperCase()} [${Math.round(boss.hp)} / ${boss.maxHp} HP]`, this.canvas.width / 2, by + bh / 2);
 
     ctx.restore();
   }
