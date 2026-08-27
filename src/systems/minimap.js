@@ -3,7 +3,7 @@
 // ============================================
 
 const MinimapSystem = {
-  size: 140,
+  size: 160,
   padding: 10,
   canvas: null,
   ctx: null,
