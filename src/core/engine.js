@@ -285,6 +285,10 @@ class GameEngine {
     this._updateParticles(dt);
     this._updateLootDrops(dt);
     this._updateFloatingTexts(dt);
+
+    if (typeof AchievementSystem !== 'undefined') {
+      AchievementSystem.update(dt);
+    }
   }
 
   _updateTowers(dt) {
@@ -419,6 +423,16 @@ class GameEngine {
     this._drawFocusTarget(ctx);
     this._drawHoverPreview(ctx);
     this._drawBossHealthBar(ctx);
+
+    // Minimap
+    if (typeof MinimapSystem !== 'undefined' && MinimapSystem.ctx) {
+      MinimapSystem.render(this);
+    }
+
+    // Achievements
+    if (typeof AchievementSystem !== 'undefined') {
+      AchievementSystem.render(ctx, this.canvas.width, this.canvas.height);
+    }
 
     ctx.restore();
   }
