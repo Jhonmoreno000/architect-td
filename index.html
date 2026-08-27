@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="src/styles.css?v=2.8">
+  <link rel="stylesheet" href="src/styles.css?v=2.9">
 </head>
 <body class="bg-[#04060e] text-slate-200 min-h-screen overflow-hidden select-none font-sans">
 
@@ -279,11 +279,36 @@
     <!-- Main Content Grid -->
     <main class="flex-1 flex overflow-hidden">
 
-      <!-- Canvas Area + DevOps Bar -->
-      <div class="flex-1 flex flex-col items-center justify-between p-3 bg-black/40 overflow-hidden relative">
+      <!-- Left Sidebar: Vertical Tower Shop -->
+      <div class="w-[72px] border-r border-white/10 bg-[#060a14]/95 flex flex-col shrink-0 overflow-y-auto items-center py-2 gap-1.5">
+        <div class="text-[8px] text-green-400 font-bold uppercase tracking-wider font-heading mb-1 text-center leading-tight">MÓDULOS<br>ARQ.</div>
+        <div id="tower-shop" class="flex flex-col gap-1.5 w-full px-1"></div>
+        <div class="mt-auto pt-2 border-t border-white/10 flex flex-col items-center gap-1.5 px-1 w-full">
+          <div class="flex items-center gap-1 justify-center">
+            <span class="text-yellow-400 text-[9px]">🏆</span>
+            <span id="achievement-count" class="text-[9px] text-yellow-300 font-code font-bold">0/18</span>
+          </div>
+          <div class="text-[7px] text-slate-500 font-code text-center leading-tight">1-0<br>SELECCIONAR</div>
+        </div>
+      </div>
 
-        <div class="flex-1 flex items-center justify-center w-full">
+      <!-- Canvas Area + DevOps Bar -->
+      <div class="flex-1 flex flex-col items-center justify-between p-2 bg-black/40 overflow-hidden relative">
+
+        <div class="flex-1 flex items-center justify-center w-full relative">
           <canvas id="gameCanvas" class="border border-green-500/30 rounded-xl shadow-[0_0_30px_rgba(0,255,65,0.06)] bg-[#040810]"></canvas>
+
+          <!-- Floating Tower Inspector (overlay) -->
+          <div id="tower-inspector" class="absolute top-2 left-2 w-64 p-3 border border-cyan-500/40 rounded-xl bg-[#080d18]/95 backdrop-blur-sm hidden z-10 max-h-[60vh] overflow-y-auto"></div>
+
+          <!-- Floating Minimap (overlay) -->
+          <div class="absolute top-2 right-2 z-10">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[9px] text-green-400 font-bold uppercase tracking-wider font-heading">RADAR</span>
+              <span class="text-[8px] text-slate-500 font-code">CLICK=TGT</span>
+            </div>
+            <div id="minimap-container" class="rounded-xl overflow-hidden border border-green-500/20 bg-black/60 shadow-lg"></div>
+          </div>
         </div>
 
         <!-- DevOps Active Abilities Bar (Root Access) with SVG Icons -->
@@ -328,91 +353,46 @@
           </button>
         </div>
       </div>
-
-      <!-- Right Side Panel: Shop & Inspector -->
-      <div class="w-80 border-l border-white/10 bg-[#060a14]/95 flex flex-col shrink-0 overflow-y-auto p-3 space-y-3">
-
-        <!-- Placed Tower Inspector (Dynamic Popup) -->
-        <div id="tower-inspector" class="p-3 border border-cyan-500/40 rounded-xl bg-cyan-950/20 hidden"></div>
-
-        <!-- Tactical Minimap -->
-        <div>
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-xs text-green-400 font-bold uppercase tracking-wider font-heading">RADAR TÁCTICO</span>
-            <span class="text-[10px] text-slate-500 font-code">CLICK = TARGET</span>
-          </div>
-          <div id="minimap-container" class="rounded-xl overflow-hidden border border-green-500/20 bg-black/60"></div>
-        </div>
-
-        <!-- Achievement Counter -->
-        <div class="flex items-center justify-between p-2 rounded-xl bg-yellow-950/20 border border-yellow-500/20">
-          <div class="flex items-center gap-1.5">
-            <span class="text-yellow-400 text-sm">🏆</span>
-            <span class="text-[11px] text-yellow-400 font-bold font-heading">LOGROS</span>
-          </div>
-          <span id="achievement-count" class="text-[11px] text-yellow-300 font-code font-bold">0/18</span>
-        </div>
-
-        <!-- Tower Shop (10 Modules) -->
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs text-green-400 font-bold uppercase tracking-wider font-heading">MÓDULOS DE ARQUITECTURA</span>
-            <span class="text-[10px] text-slate-500 font-code">TECLAS 1-0</span>
-          </div>
-          <div id="tower-shop" class="grid grid-cols-2 gap-2"></div>
-        </div>
-
-        <!-- Controls Help Card -->
-        <div class="mt-auto p-3 rounded-xl bg-black/50 border border-white/5 text-[10px] text-slate-400 space-y-1">
-          <div class="text-green-400 font-bold uppercase tracking-wider font-heading">Comandos Rápidos:</div>
-          <div>• <b>Click izquierdo:</b> Colocar / seleccionar servidor</div>
-          <div>• <b>Click derecho:</b> Target Focus (foco manual)</div>
-          <div>• <b>R:</b> Reparar servidor dañado</div>
-          <div>• <b>Q / W / E:</b> Habilidades activas de DevOps</div>
-          <div>• <b>Enter:</b> Iniciar oleada anticipada (+$ bonus)</div>
-          <div>• <b>Espacio:</b> Pausar / Reanudar | <b>Esc:</b> Cancelar</div>
-        </div>
-      </div>
     </main>
   </div>
 
   <!-- SCRIPTS - Load Order Matters -->
-  <script src="src/config/levels.js?v=2.8"></script>
-  <script src="src/config/incidents.js?v=2.8"></script>
-  <script src="src/config/guide.js?v=2.8"></script>
-  <script src="src/config/codex.js?v=2.8"></script>
-  <script src="src/config/towers.js?v=2.8"></script>
-  <script src="src/entities/base.js?v=2.8"></script>
-  <script src="src/entities/particle.js?v=2.8"></script>
-  <script src="src/entities/loot-drop.js?v=2.8"></script>
-  <script src="src/entities/floating-text.js?v=2.8"></script>
-  <script src="src/entities/projectile.js?v=2.8"></script>
-  <script src="src/entities/enemy-projectile.js?v=2.8"></script>
-  <script src="src/entities/request.js?v=2.8"></script>
-  <script src="src/towers/base.js?v=2.8"></script>
-  <script src="src/towers/loadbalancer.js?v=2.8"></script>
-  <script src="src/towers/circuitbreaker.js?v=2.8"></script>
-  <script src="src/towers/apigateway.js?v=2.8"></script>
-  <script src="src/towers/cache.js?v=2.8"></script>
-  <script src="src/towers/waf.js?v=2.8"></script>
-  <script src="src/towers/messagequeue.js?v=2.8"></script>
-  <script src="src/towers/cdn.js?v=2.8"></script>
-  <script src="src/towers/database.js?v=2.8"></script>
-  <script src="src/towers/servicemesh.js?v=2.8"></script>
-  <script src="src/towers/honeypot.js?v=2.8"></script>
-  <script src="src/towers/factory.js?v=2.8"></script>
-  <script src="src/core/audio.js?v=2.8"></script>
-  <script src="src/core/engine.js?v=2.8"></script>
-  <script src="src/systems/telemetry.js?v=2.8"></script>
-  <script src="src/systems/minimap.js?v=2.8"></script>
-  <script src="src/systems/achievements.js?v=2.8"></script>
-  <script src="src/systems/incidents.js?v=2.8"></script>
-  <script src="src/systems/combat.js?v=2.8"></script>
-  <script src="src/systems/grid.js?v=2.8"></script>
-  <script src="src/systems/wave.js?v=2.8"></script>
-  <script src="src/ui/shop.js?v=2.8"></script>
-  <script src="src/ui/hud.js?v=2.8"></script>
-  <script src="src/ui/events.js?v=2.8"></script>
-  <script src="src/main.js?v=2.8"></script>
+  <script src="src/config/levels.js?v=2.9"></script>
+  <script src="src/config/incidents.js?v=2.9"></script>
+  <script src="src/config/guide.js?v=2.9"></script>
+  <script src="src/config/codex.js?v=2.9"></script>
+  <script src="src/config/towers.js?v=2.9"></script>
+  <script src="src/entities/base.js?v=2.9"></script>
+  <script src="src/entities/particle.js?v=2.9"></script>
+  <script src="src/entities/loot-drop.js?v=2.9"></script>
+  <script src="src/entities/floating-text.js?v=2.9"></script>
+  <script src="src/entities/projectile.js?v=2.9"></script>
+  <script src="src/entities/enemy-projectile.js?v=2.9"></script>
+  <script src="src/entities/request.js?v=2.9"></script>
+  <script src="src/towers/base.js?v=2.9"></script>
+  <script src="src/towers/loadbalancer.js?v=2.9"></script>
+  <script src="src/towers/circuitbreaker.js?v=2.9"></script>
+  <script src="src/towers/apigateway.js?v=2.9"></script>
+  <script src="src/towers/cache.js?v=2.9"></script>
+  <script src="src/towers/waf.js?v=2.9"></script>
+  <script src="src/towers/messagequeue.js?v=2.9"></script>
+  <script src="src/towers/cdn.js?v=2.9"></script>
+  <script src="src/towers/database.js?v=2.9"></script>
+  <script src="src/towers/servicemesh.js?v=2.9"></script>
+  <script src="src/towers/honeypot.js?v=2.9"></script>
+  <script src="src/towers/factory.js?v=2.9"></script>
+  <script src="src/core/audio.js?v=2.9"></script>
+  <script src="src/core/engine.js?v=2.9"></script>
+  <script src="src/systems/telemetry.js?v=2.9"></script>
+  <script src="src/systems/minimap.js?v=2.9"></script>
+  <script src="src/systems/achievements.js?v=2.9"></script>
+  <script src="src/systems/incidents.js?v=2.9"></script>
+  <script src="src/systems/combat.js?v=2.9"></script>
+  <script src="src/systems/grid.js?v=2.9"></script>
+  <script src="src/systems/wave.js?v=2.9"></script>
+  <script src="src/ui/shop.js?v=2.9"></script>
+  <script src="src/ui/hud.js?v=2.9"></script>
+  <script src="src/ui/events.js?v=2.9"></script>
+  <script src="src/main.js?v=2.9"></script>
 </body>
 </html>
