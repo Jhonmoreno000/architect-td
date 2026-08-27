@@ -93,6 +93,29 @@ const HUD = {
       }
     }
 
+    // Wave Progress Indicator
+    const waveProgressFill = document.getElementById('wave-progress-fill');
+    const waveEnemiesText = document.getElementById('wave-enemies-text');
+    if (waveProgressFill && waveEnemiesText && state.engine) {
+      const totalEnemies = WaveSystem.enemiesPerWave || 0;
+      const remaining = state.engine.enemies.length + (WaveSystem.waveQueue ? WaveSystem.waveQueue.length : 0);
+      const pct = totalEnemies > 0 ? Math.max(0, Math.min(100, ((totalEnemies - remaining) / totalEnemies) * 100)) : 0;
+      waveProgressFill.style.width = `${pct}%`;
+      waveEnemiesText.textContent = remaining;
+      if (remaining === 0 && !WaveSystem.waveActive) {
+        waveProgressFill.style.width = '100%';
+        waveProgressFill.style.backgroundColor = '#00ff41';
+      } else {
+        waveProgressFill.style.backgroundColor = '#ef4444';
+      }
+    }
+
+    // Achievement Counter
+    const achCountEl = document.getElementById('achievement-count');
+    if (achCountEl && typeof AchievementSystem !== 'undefined') {
+      achCountEl.textContent = `${AchievementSystem.getCount()}/${AchievementSystem.getTotal()}`;
+    }
+
     // Update Tower Shop button states
     document.querySelectorAll('.tower-btn').forEach(btn => {
       const type = btn.dataset.type;
