@@ -1,4 +1,4 @@
-# Architect Tower Defense 🛡️⚙️
+# Architect Tower Defense 
 
 > Tower Defense educativo sobre DevOps, patrones de arquitectura de software, resiliencia y ciberseguridad.
 
@@ -6,7 +6,7 @@
 
 ---
 
-## 📑 Tabla de Contenidos
+##  Tabla de Contenidos
 
 - [Descripción](#-descripción)
 - [Modos de Juego](#-modos-de-juego)
@@ -20,7 +20,7 @@
 
 ---
 
-## 📖 Descripción
+##  Descripción
 
 **Architect Tower Defense** es un juego de estrategia y simulación técnica en canvas 2D donde proteges el **Core central de infraestructura** contra oleadas invasoras de amenazas cibernéticas en 360 grados.
 
@@ -28,9 +28,9 @@ Cada servidor desplegable representa un patrón de arquitectura real (Load Balan
 
 ---
 
-## 🎮 Modos de Juego
+##  Modos de Juego
 
-### 1. 📜 Modo Campaña Historia (7 Capítulos Interactivos)
+### 1.  Modo Campaña Historia (7 Capítulos Interactivos)
 Una experiencia narrativa con toma de decisiones estratégicas que modifican tus recursos y ventajas en batalla:
 - **Capítulo I:** *El Lanzamiento del Monolito (Black Friday)* — Elena Vance (VP Infraestructura).
 - **Capítulo II:** *Falla en Cascada & La Malla Activa-Activa* — Alex Chen (Incident Commander).
@@ -40,7 +40,7 @@ Una experiencia narrativa con toma de decisiones estratégicas que modifican tus
 - **Capítulo VI:** *Vulnerabilidad Spectre & Crisis de Memoria* — Dra. Aris Thorne (Computación Cuántica).
 - **Capítulo VII:** *Rootkit Apex: Protocolo Fin del Mundo* — Directorio Ejecutivo & Comando Global.
 
-### 2. 🌐 Modo Libre / Sandbox de Topologías
+### 2.  Modo Libre / Sandbox de Topologías
 Selecciona entre 5 topologías de red perimetral:
 - **Data Center Central:** Perímetro concéntrico DMZ en 360°.
 - **Malla Activa-Activa:** Dos centros de datos unidos por un haz láser de sincronización de datos.
@@ -50,7 +50,7 @@ Selecciona entre 5 topologías de red perimetral:
 
 ---
 
-## 🏗️ Sistema de Servidores (Torres)
+##  Sistema de Servidores (Torres)
 
 | Módulo | Tipo | Costo | Rango | Rol de Arquitectura | Sinergias |
 |---|---|---|---|---|---|
@@ -67,7 +67,7 @@ Selecciona entre 5 topologías de red perimetral:
 
 ---
 
-## 👾 Catálogo de Amenazas Cibernéticas
+##  Catálogo de Amenazas Cibernéticas
 
 1. **GET Request (`GET`):** Petición HTTP estándar de lectura.
 2. **POST Payload (`POST`):** Tráfico pesado que lanza proyectiles de corrupción.
@@ -85,7 +85,7 @@ Selecciona entre 5 topologías de red perimetral:
 
 ---
 
-## 📡 Radar Táctico & Telemetría en Tiempo Real
+##  Radar Táctico & Telemetría en Tiempo Real
 
 - **Haz CRT de Fósforo:** Barrido continuo con persistencia de estela.
 - **Alarma Estroboscópica:** Detección de peligro inminente cuando amenazas entran a menos de 180px del Core.
@@ -94,7 +94,7 @@ Selecciona entre 5 topologías de red perimetral:
 
 ---
 
-## 🐳 Despliegue con Docker
+##  Despliegue con Docker
 
 ### Con Docker Compose:
 ```bash
@@ -113,7 +113,7 @@ docker run -d -p 8080:80 --name architect-td-game architect-td:latest
 
 ---
 
-## 🧪 Pruebas Automatizadas
+##  Pruebas Automatizadas
 
 El proyecto incluye una suite de pruebas automatizadas que valida la sintaxis de los 39 módulos, la integridad de los 10 patrones de servidores, 16 tipos de enemigos, 7 capítulos de historia y cuestionarios RCA:
 
@@ -125,7 +125,7 @@ node tests/suite.test.js
 
 ---
 
-## ⌨️ Controles del Juego
+## Controles del Juego
 
 - **Click Izquierdo:** Colocar servidor / Seleccionar servidor en campo / Recoger loot.
 - **Click Derecho:** Target Focus (Foco manual de ataque concentrado).
