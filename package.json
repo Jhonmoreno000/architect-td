@@ -1,0 +1,12 @@
+{
+  "name": "architect-td",
+  "version": "1.0.0",
+  "description": "Architect Tower Defense - Learn architecture patterns through gameplay",
+  "scripts": {
+    "dev": "tailwindcss -i ./src/input.css -o ./src/styles.css --watch",
+    "build": "tailwindcss -i ./src/input.css -o ./src/styles.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}
