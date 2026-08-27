@@ -1,5 +1,5 @@
 // ============================================
-// ENTITIES - Particle System
+// ENTITIES - Optimized Particle System
 // ============================================
 
 class Particle extends Entity {
@@ -12,20 +12,19 @@ class Particle extends Entity {
     this.maxLife = life;
     this.type = type;
     this.radius = size;
-    this.initialSize = size;
   }
 
   update(dt) {
     this.x += this.vx * dt;
     this.y += this.vy * dt;
 
-    if (this.type === 'gravity') {
+    if (this.type === 'ring') {
+      this.radius += 1.8 * dt;
+    } else if (this.type === 'gravity') {
       this.vy += 0.08 * dt;
     } else if (this.type === 'friction') {
       this.vx *= 0.95;
       this.vy *= 0.95;
-    } else if (this.type === 'ring') {
-      this.radius += 1.8 * dt;
     }
 
     this.life -= dt;
