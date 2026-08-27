@@ -2,6 +2,18 @@
 // ENTITIES - Optimized Particle System
 // ============================================
 
+/**
+ * Particle - Sistema de partículas para efectos visuales.
+ *
+ * Tipos de partículas:
+ * - 'spark': Chispas de explosiones/hits (se desvanece con tamaño reducido)
+ * - 'ring': Anillo de onda expansiva (crece con opacidad reducida)
+ * - 'gravity': Partícula con gravedad (cae con el tiempo)
+ * - 'friction': Partícula con fricción (frena progresivamente)
+ *
+ * @class Particle
+ * @extends Entity
+ */
 class Particle extends Entity {
   constructor(x, y, color, vx, vy, life = 30, type = 'spark', size = 3) {
     super(x, y);

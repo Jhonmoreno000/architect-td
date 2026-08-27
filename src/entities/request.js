@@ -2,7 +2,32 @@
 // ENTITIES - Optimized Request (Enemy) with Reduced Allocations
 // ============================================
 
+/**
+ * Request - Entidad enemiga con IA de pathfinding, flocking y habilidades especiales.
+ *
+ * Cada enemigo tiene: salud, velocidad, daño de ataque, y habilidades únicas según tipo.
+ * Los enemigos se mueven hacia el core usando steering behaviors con avoidance de torres.
+ *
+ * Tipos soportados: normal, fast, heavy, botnet, malicious, zeroday, ransomware, boss_*
+ *
+ * Optimizaciones de rendimiento:
+ * - Core position cacheada (no deep lookup cada frame)
+ * - Comparaciones de distancia² para avoidance
+ * - Sin allocations de objetos en el hot path (steering usa cálculos directos)
+ *
+ * @class Request
+ * @extends Entity
+ */
 class Request extends Entity {
+  /**
+   * Crea un enemigo con stats escalados por dificultad.
+   * @param {number} x - Posición X de spawn
+   * @param {number} y - Posición Y de spawn
+   * @param {Object} targetPos - Posición objetivo {x, y} (normalmente el core)
+   * @param {string} [type='normal'] - Tipo de enemigo (key de ENEMY_CONFIG)
+   * @param {string} [difficulty='staging'] - Nivel de dificultad
+   * @param {boolean} [isMinion=false] - Si es clon/minion (reduce HP 45%)
+   */
   constructor(x, y, targetPos, type = 'normal', difficulty = 'staging', isMinion = false) {
     super(x, y);
     this.targetPosX = targetPos ? targetPos.x : 520;
@@ -64,6 +89,11 @@ class Request extends Entity {
     this.trailTimer = 0;
   }
 
+  /**
+   * Actualiza IA, movimiento y habilidades del enemigo.
+   * Incluye: pathfinding al core, avoidance de torres/enemigos, burn DOT, stun, slow.
+   * @param {number} dt - Delta time
+   */
   update(dt) {
     if (!this.alive || this.reached) return;
     this.animTimer += dt * 0.08;
@@ -294,6 +324,10 @@ class Request extends Entity {
     }
   }
 
+  /**
+   * Aplica daño al enemigo, considerando escudo si tiene.
+   * @param {number} amount - Cantidad de daño a aplicar
+   */
   takeDamage(amount) {
     this.hitFlash = 1.0;
 

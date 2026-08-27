@@ -2,12 +2,29 @@
 // SYSTEMS - Tactical Minimap with Real-Time Radar
 // ============================================
 
+/**
+ * MinimapSystem - Mini-mapa táctico con vista global del campo de batalla.
+ *
+ * Renderiza una vista reducida del mapa mostrando:
+ * - Core (verde pulsante)
+ * - Sub-nodes y aux cores (cyan)
+ * - Torres colocadas (colores de la torre)
+ * - Enemigos (con indicador de boss más grande)
+ * - Sweep radar animado cuando hay enemigos
+ * - Focus target (crosshair rojo)
+ * - Conteo de enemigos y bosses en la esquina
+ *
+ * Interactividad: Click en el minimap activa Focus Target en esa posición.
+ *
+ * @namespace MinimapSystem
+ */
 const MinimapSystem = {
   size: 160,
   padding: 10,
   canvas: null,
   ctx: null,
 
+  /** Inicializa el canvas del minimap y el listener de clicks. */
   init() {
     const container = document.getElementById('minimap-container');
     if (!container) return;
@@ -36,6 +53,10 @@ const MinimapSystem = {
     });
   },
 
+  /**
+   * Renderiza el minimap completo cada frame.
+   * @param {GameEngine} engine - Instancia del motor del juego
+   */
   render(engine) {
     if (!this.ctx || !engine) return;
     const ctx = this.ctx;

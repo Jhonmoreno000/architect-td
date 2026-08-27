@@ -2,7 +2,26 @@
 // CORE - Performance-Optimized Game Engine
 // ============================================
 
+/**
+ * GameEngine - Motor principal del juego con optimizaciones de rendimiento.
+ *
+ * Gestiona el game loop (requestAnimationFrame), actualización y renderizado de todas
+ * las entidades: torres, enemigos, proyectiles, partículas, textos flotantes y loot drops.
+ *
+ * Optimizaciones aplicadas:
+ * - Swap-and-pop en vez de Array.splice() para eliminación O(1) de entidades muertas
+ * - Cacheo de gradiente de fondo (se crea una vez, no cada frame)
+ * - Reducción de allocations de objetos por frame (reuse de _tmpVec, lastTargetX/Y)
+ * - Comparaciones de distancia al cuadrado para evitar Math.sqrt en paths calientes
+ *
+ * @class GameEngine
+ * @param {HTMLCanvasElement} canvas - Canvas principal del juego
+ */
 class GameEngine {
+  /**
+   * Inicializa el motor con todos los arrays de entidades y configuración base.
+   * @param {HTMLCanvasElement} canvas
+   */
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
@@ -47,6 +66,10 @@ class GameEngine {
     this._tmpVec = { x: 0, y: 0 };
   }
 
+  /**
+   * Carga un nivel: resetea todas las entidades, inicializa grid y configura el core.
+   * @param {Object} levelConfig - Configuración del nivel (core position, subNodes, auxCores, etc.)
+   */
   loadLevel(levelConfig) {
     this.currentLevelConfig = levelConfig;
     this.canvas.width = this.cols * this.gridSize;
@@ -109,6 +132,12 @@ class GameEngine {
     }
   }
 
+  /**
+   * Establece un objetivo de focus táctico (target lock) en una posición del mapa.
+   * Las torres priorizan enemigos dentro del radio de 70px del focus.
+   * @param {number} x - Coordenada X del focus
+   * @param {number} y - Coordenada Y del focus
+   */
   setFocusTarget(x, y) {
     this.focusTarget = { x, y, timer: 300 };
     AudioSystem.play('zap');
@@ -130,6 +159,11 @@ class GameEngine {
     this.towers.push(tower);
   }
 
+  /**
+   * Genera un enemigo en los bordes del mapa (o en un portal cuántico si aplica).
+   * @param {string} type - Tipo de enemigo (keys de ENEMY_CONFIG)
+   * @returns {Request} Instancia del enemigo creado
+   */
   spawnEnemy(type) {
     const w = this.canvas.width;
     const h = this.canvas.height;
@@ -203,6 +237,7 @@ class GameEngine {
     this.screenShakeIntensity = intensity;
   }
 
+  /** Inicia el game loop con requestAnimationFrame. */
   start() {
     this.running = true;
     this.lastTime = performance.now();
@@ -213,6 +248,10 @@ class GameEngine {
     this.running = false;
   }
 
+  /**
+   * Game loop principal. Ejecuta update() y render() cada frame.
+   * Calcula delta time normalizado (60fps base) y aplica speedMultiplier.
+   */
   loop() {
     if (!this.running) return;
 
@@ -237,6 +276,11 @@ class GameEngine {
     }
   }
 
+  /**
+   * Actualiza todas las entidades del juego en orden definido.
+   * Optimización: usa swap-and-pop para eliminación O(1) en cada array.
+   * @param {number} dt - Delta time normalizado (1.0 = 1 frame a 60fps)
+   */
   update(dt) {
     if (this.focusTarget) {
       this.focusTarget.timer -= dt;
@@ -343,6 +387,11 @@ class GameEngine {
     }
   }
 
+  /**
+   * Actualiza enemigos usando swap-and-pop para evitar Array.splice() O(n).
+   * Los enemigos muertos se reemplazan con el último elemento del array.
+   * @param {number} dt - Delta time
+   */
   _updateEnemies(dt) {
     let writeIdx = 0;
     for (let i = 0; i < this.enemies.length; i++) {
@@ -417,6 +466,10 @@ class GameEngine {
     this.floatingTexts.length = writeIdx;
   }
 
+  /**
+   * Renderiza el frame completo: fondo, grid, entidades, UI overlays.
+   * Incluye screen shake cuando está activo.
+   */
   render() {
     const { ctx } = this;
     const w = this.canvas.width;
@@ -476,6 +529,13 @@ class GameEngine {
     ctx.restore();
   }
 
+  /**
+   * Dibuja el fondo con gradiente radial cacheado.
+   * Optimización: el gradiente se recrea solo cuando cambia la posición del core o el canvas.
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} w - Ancho del canvas
+   * @param {number} h - Alto del canvas
+   */
   _drawBackground(ctx, w, h) {
     const levelBg = (this.currentLevelConfig && this.currentLevelConfig.bgColor) || '#040814';
     const bgKey = `${this.core.x}_${this.core.y}_${levelBg}_${w}`;

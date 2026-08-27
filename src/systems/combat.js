@@ -2,10 +2,31 @@
 // SYSTEMS - Combat, DevOps Abilities & Loot Drop Engine
 // ============================================
 
+/**
+ * CombatSystem - Sistema central de combate, habilidades DevOps y loot drops.
+ *
+ * Responsabilidades:
+ * - dealDamage(): Aplica daño con crits (12% chance, 1.6x), bonus de tipo, y overclock
+ * - applyAreaDamage(): Daño en área con falloff radial
+ * - handleEnemyReached(): Reduce vidas cuando un enemigo llega al core
+ * - handleEnemyKilled(): Otorga dinero, score, combo bonus, loot drops, y checkea achievements
+ * - triggerAbility(): Activa habilidades DevOps (autoscale, shield, reboot)
+ *
+ * Combo system: Kill streaks dan bonus de score progresivo (hasta 2.0x)
+ *
+ * @namespace CombatSystem
+ */
 const CombatSystem = {
   combo: 0,
   comboTimer: 0,
 
+  /**
+   * Aplica daño a un enemigo con crits y bonuses.
+   * @param {Request} enemy - Enemigo objetivo
+   * @param {number} amount - Daño base
+   * @param {string} [color='#00ff41'] - Color del floating text
+   * @param {Object} [sourceTower=null] - Torre origen (para tracking y bonuses)
+   */
   dealDamage(enemy, amount, color = '#00ff41', sourceTower = null) {
     if (!enemy || !enemy.alive) return;
 
@@ -59,6 +80,11 @@ const CombatSystem = {
     }
   },
 
+  /**
+   * Maneja cuando un enemigo llega al core.
+   * Aplica daño de vidas, considera escudo activo, y verifica game over.
+   * @param {Request} enemy - Enemigo que llegó
+   */
   handleEnemyReached(enemy) {
     if (GameState.shieldCharges > 0) {
       GameState.shieldCharges--;
@@ -91,6 +117,10 @@ const CombatSystem = {
     }
   },
 
+  /**
+   * Maneja la muerte de un enemigo: otorga recompensas, combo, loot, y checkea logros.
+   * @param {Request} enemy - Enemigo que murió
+   */
   handleEnemyKilled(enemy) {
     this.combo++;
     this.comboTimer = 120;
@@ -150,6 +180,10 @@ const CombatSystem = {
     GameState.updateUI();
   },
 
+  /**
+   * Activa una habilidad DevOps por ID.
+   * @param {string} abilityId - 'autoscale' | 'shield' | 'reboot'
+   */
   triggerAbility(abilityId) {
     if (!GameState.gameStarted || GameState.isGameOver || GameState.paused) return;
 

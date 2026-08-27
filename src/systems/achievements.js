@@ -2,6 +2,20 @@
 // SYSTEMS - Achievement / Badge System
 // ============================================
 
+/**
+ * AchievementSystem - Sistema de logros desbloqueables con notificaciones.
+ *
+ * 18 logros definidos que cubren: kills, combos, oleadas, bosses, upgrades, y más.
+ * Cada logro se desbloquea una sola vez y muestra una notificación animada.
+ *
+ * Flujo:
+ * 1. Combate/oleada llama a AchievementSystem.check('id')
+ * 2. Si no está desbloqueado, se agrega a la cola de notificaciones
+ * 3. Se muestra una notificación de 3 segundos con fade in/out
+ * 4. Se otorgan 100 puntos de score por logro desbloqueado
+ *
+ * @namespace AchievementSystem
+ */
 const AchievementSystem = {
   unlocked: new Set(),
   notificationQueue: [],
@@ -137,6 +151,11 @@ const AchievementSystem = {
     }
   },
 
+  /**
+   * Intenta desbloquear un logro por ID.
+   * Si ya está desbloqueado, hace nothing. Si no, lo agrega a la cola.
+   * @param {string} id - ID del logro (key de definitions)
+   */
   check(id) {
     if (this.unlocked.has(id)) return;
     if (!this.definitions[id]) return;
@@ -163,6 +182,12 @@ const AchievementSystem = {
     }
   },
 
+  /**
+   * Renderiza la notificación actual con fade in/out.
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} canvasW - Ancho del canvas principal
+   * @param {number} canvasH - Alto del canvas principal
+   */
   render(ctx, canvasW, canvasH) {
     if (!this.currentNotification) return;
     const n = this.currentNotification;

@@ -2,6 +2,22 @@
 // SYSTEMS - Dynamic & Unpredictable 360° Wave Orchestrator
 // ============================================
 
+/**
+ * WaveSystem - Orquestador de oleadas con IA táctica.
+ *
+ * Genera oleadas dinámicas usando "squads" de enemigos con diferentes arquetipos:
+ * - swarm: Grupo grande de enemigos débiles (botnet/fast)
+ * - mixed: Combinación balanceada
+ * - heavy_assault: Enemigos pesados con soporte
+ * - stealth_rush: Enemigos sigilosos (zeroday) + rápidos
+ * - crypted_convoy: Ransomware con escolta
+ *
+ * Cada 5 oleadas aparece un boss con habilidades únicas.
+ * Incluye sistema de prep phase (12s) y llamada anticipada con bonus.
+ * Triggera incident quiz cada 3 oleadas.
+ *
+ * @namespace WaveSystem
+ */
 const WaveSystem = {
   wave: 0,
   maxWaves: 20,
@@ -15,6 +31,9 @@ const WaveSystem = {
   isBossWave: false,
   bossType: null,
 
+  /**
+   * Inicia la siguiente oleada (incrementa contador, genera enemigos, reproduce audio).
+   */
   startWave() {
     this.isPrepPhase = false;
     this.prepTimer = 0;
@@ -53,6 +72,10 @@ const WaveSystem = {
     GameState.updateUI();
   },
 
+  /**
+   * Genera la cola de enemigos para la oleada actual.
+   * Selecciona arquetipos aleatorios y los mezcla para variedad.
+   */
   _generateTacticalWave() {
     this.waveQueue = [];
     const w = this.wave;
@@ -97,6 +120,10 @@ const WaveSystem = {
     }
   },
 
+  /**
+   * Llama la oleada anticipadamente durante prep phase.
+   * Otorga bonus de dinero proporcional al tiempo restante.
+   */
   callWaveEarly() {
     if (!this.isPrepPhase || this.waveActive) return;
     const earlyBonus = Math.round(this.prepTimer * 10);
@@ -112,6 +139,10 @@ const WaveSystem = {
     this.startWave();
   },
 
+  /**
+   * Actualiza el sistema de oleadas: maneja prep phase, spawn de enemigos, y detección de fin de oleada.
+   * @param {number} dt - Delta time
+   */
   update(dt) {
     if (GameState.paused) return;
 

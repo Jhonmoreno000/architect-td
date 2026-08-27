@@ -2,7 +2,33 @@
 // ENTITIES - Optimized Projectile System
 // ============================================
 
+/**
+ * Projectile - Sistema de proyectiles optimizado.
+ *
+ * Soporta múltiples tipos: bullet, sniper, heavy_packet, bomb, beam.
+ * Cada tipo tiene propiedades visuales y de daño diferentes.
+ *
+ * Optimizaciones:
+ * - Trail almacenado como array plano [x1,y1, x2,y2, ...] en vez de objetos
+ * - Hit detection usa distancia² (evita Math.sqrt)
+ * - No crea objetos {x,y} por frame — usa lastTargetX/Y directamente
+ *
+ * @class Projectile
+ * @extends Entity
+ */
 class Projectile extends Entity {
+  /**
+   * Crea un proyectil con sus propiedades de movimiento y daño.
+   * @param {number} x - Posición X inicial
+   * @param {number} y - Posición Y inicial
+   * @param {Entity} target - Objetivo que sigue el proyectil
+   * @param {number} damage - Daño base del proyectil
+   * @param {string} color - Color hexadecimal del proyectil
+   * @param {number} [speed=6] - Velocidad de movimiento
+   * @param {string} [type='bullet'] - Tipo: 'bullet', 'sniper', 'heavy_packet', 'bomb', 'beam'
+   * @param {number} [splashRadius=0] - Radio de daño en área (0 = sin splash)
+   * @param {Object} [sourceTower=null] - Torre que disparó (para tracking de kills/damage)
+   */
   constructor(x, y, target, damage, color, speed = 6, type = 'bullet', splashRadius = 0, sourceTower = null) {
     super(x, y);
     this.target = target;
@@ -18,6 +44,7 @@ class Projectile extends Entity {
     this.lastTargetY = target ? target.y : y;
   }
 
+  /** Actualiza posición del proyectil y verifica colisión. */
   update(dt) {
     if (!this.alive) return;
 
