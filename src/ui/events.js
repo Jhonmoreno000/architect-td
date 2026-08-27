@@ -1,5 +1,5 @@
 // ============================================
-// UI - Event Handlers & Modal Controllers (Guide, Right-Click & Hotkeys)
+// UI - Event Handlers & Modal Controllers (Campaign, Guide, Achievements, Right-Click)
 // ============================================
 
 const EventHandlers = {
@@ -9,6 +9,8 @@ const EventHandlers = {
     this._setupKeyboard();
     this._setupModals();
     this._setupGuide();
+    this._setupStory();
+    this._setupAchievements();
   },
 
   hideScreen(id) {
@@ -68,6 +70,9 @@ const EventHandlers = {
 
       if (GameState.engine) {
         GameState.engine.setFocusTarget(x, y);
+        if (typeof AchievementSystem !== 'undefined') {
+          AchievementSystem.unlock('focus_target');
+        }
       }
     });
 
@@ -91,12 +96,20 @@ const EventHandlers = {
   },
 
   _setupButtons() {
-    // Start Intro -> Level Select
+    // Start Intro -> Level Select (Sandbox Mode)
     document.getElementById('btn-intro-play')?.addEventListener('click', () => {
       AudioSystem.init();
       AudioSystem.startMusic();
+      StorySystem.isStoryMode = false;
       this.hideScreen('intro-screen');
       this.showLevelSelect();
+    });
+
+    // Start Intro -> Story Campaign Mode
+    document.getElementById('btn-intro-story')?.addEventListener('click', () => {
+      AudioSystem.init();
+      AudioSystem.startMusic();
+      StorySystem.startCampaignChapter(1);
     });
 
     // Level Select -> Back to Intro
@@ -122,7 +135,12 @@ const EventHandlers = {
       this._restart();
     });
     document.getElementById('btn-restart2')?.addEventListener('click', () => {
-      this._restart();
+      if (StorySystem.isStoryMode && StorySystem.activeChapter && StorySystem.activeChapter.id < STORY_CHAPTERS.length) {
+        this.hideScreen('victory-screen');
+        StorySystem.startCampaignChapter(StorySystem.activeChapter.id + 1);
+      } else {
+        this._restart();
+      }
     });
 
     // Level Select from Game Over / Victory
@@ -152,7 +170,7 @@ const EventHandlers = {
       AudioSystem.play('click');
     });
 
-    // Music & Sound Toggles
+    // Music Toggle
     document.getElementById('btn-toggle-music')?.addEventListener('click', () => {
       const isPlaying = AudioSystem.toggleMusic();
       document.getElementById('music-label').textContent = isPlaying ? 'ON' : 'OFF';
@@ -171,6 +189,33 @@ const EventHandlers = {
     });
   },
 
+  _setupStory() {
+    document.getElementById('btn-story-launch')?.addEventListener('click', () => {
+      StorySystem.confirmDecisionAndStart();
+    });
+
+    document.getElementById('btn-close-story')?.addEventListener('click', () => {
+      this.hideScreen('story-modal');
+      if (!GameState.gameStarted) {
+        this.showScreen('intro-screen');
+      }
+    });
+  },
+
+  _setupAchievements() {
+    document.getElementById('achievement-count')?.parentElement?.addEventListener('click', () => {
+      if (typeof AchievementSystem !== 'undefined') {
+        AchievementSystem.showAchievementsModal();
+      }
+    });
+
+    document.getElementById('btn-close-achievements')?.addEventListener('click', () => {
+      if (typeof AchievementSystem !== 'undefined') {
+        AchievementSystem.closeAchievementsModal();
+      }
+    });
+  },
+
   _setupKeyboard() {
     document.addEventListener('keydown', (e) => {
       if (!GameState.gameStarted) return;
@@ -180,6 +225,10 @@ const EventHandlers = {
         GameState.selectPlacedTower(null);
         this.closeCodex();
         this.closeGuide();
+        this.hideScreen('story-modal');
+        if (typeof AchievementSystem !== 'undefined') {
+          AchievementSystem.closeAchievementsModal();
+        }
         IncidentSystem.closeModal();
       }
 
@@ -276,7 +325,7 @@ const EventHandlers = {
     if (!tabsContainer || !contentContainer) return;
 
     tabsContainer.innerHTML = GUIDE_SECTIONS.map((sec, i) => `
-      <button class="w-full text-left p-2.5 rounded-lg text-xs font-bold font-heading transition-all ${i === idx ? 'bg-green-600 text-black shadow-md' : 'text-slate-400 hover:text-white hover:bg-white/5'}" data-idx="${i}">
+      <button class="w-full text-left p-3 rounded-xl text-xs font-bold font-heading transition-all ${i === idx ? 'bg-green-600 text-black shadow-md' : 'text-slate-400 hover:text-white hover:bg-white/5'}" data-idx="${i}">
         ${sec.title}
       </button>
     `).join('');
@@ -310,23 +359,23 @@ const EventHandlers = {
     LEVEL_CONFIGS.forEach((lvl) => {
       const isSelected = GameState.selectedLevelId === lvl.id;
       const card = document.createElement('div');
-      card.className = `p-3.5 rounded-xl border cursor-pointer transition-all ${isSelected ? 'border-green-400 bg-green-950/40 shadow-[0_0_20px_rgba(0,255,65,0.25)] scale-[1.02]' : 'border-white/10 bg-[#080d18] hover:border-cyan-500/40 hover:bg-[#0c1424]'}`;
+      card.className = `p-4 rounded-2xl border cursor-pointer transition-all ${isSelected ? 'border-green-400 bg-green-950/40 shadow-[0_0_25px_rgba(0,255,65,0.25)] scale-[1.02]' : 'border-white/10 bg-[#080d18] hover:border-cyan-500/40 hover:bg-[#0c1424]'}`;
 
       card.innerHTML = `
-        <div class="flex items-center justify-between mb-1.5">
-          <span class="text-xs font-bold text-cyan-400 font-heading">NIVEL ${lvl.id}</span>
-          <span class="text-[10px] px-2 py-0.5 rounded-md font-bold font-code ${lvl.difficultyRating === 'Baja' ? 'bg-green-500/20 text-green-400' : lvl.difficultyRating === 'Media' ? 'bg-cyan-500/20 text-cyan-300' : lvl.difficultyRating === 'Alta' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}">${lvl.difficultyRating}</span>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-cyan-400 font-heading tracking-wider">NIVEL ${lvl.id}</span>
+          <span class="text-xs px-2.5 py-0.5 rounded-lg font-bold font-code ${lvl.difficultyRating === 'Baja' ? 'bg-green-500/20 text-green-400' : lvl.difficultyRating === 'Media' ? 'bg-cyan-500/20 text-cyan-300' : lvl.difficultyRating === 'Alta' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}">${lvl.difficultyRating}</span>
         </div>
-        <div class="text-sm font-bold text-white mb-1 font-heading tracking-wide">${lvl.name}</div>
-        <div class="text-[11px] text-slate-400 line-clamp-2 leading-tight mb-2">${lvl.description}</div>
+        <div class="text-base font-bold text-white mb-1.5 font-heading tracking-wide">${lvl.name}</div>
+        <div class="text-xs text-slate-300 leading-relaxed mb-3">${lvl.description}</div>
         
-        <div class="p-1.5 rounded-lg bg-black/40 border border-white/5 text-[10px] text-cyan-300 mb-2">
-          <div class="font-bold text-cyan-400">${lvl.mechanicTitle || 'MECÁNICA ESPECIAL'}:</div>
-          <div class="text-[9px] text-slate-400 leading-tight">${lvl.mechanicDesc || 'Defensa 360.'}</div>
+        <div class="p-2.5 rounded-xl bg-black/50 border border-white/10 text-xs text-cyan-300 mb-3">
+          <div class="font-bold text-cyan-400 mb-0.5">${lvl.mechanicTitle || 'MECÁNICA ESPECIAL'}:</div>
+          <div class="text-xs text-slate-300 leading-tight">${lvl.mechanicDesc || 'Defensa 360.'}</div>
         </div>
 
-        <div class="flex items-center justify-between pt-2 border-t border-white/10 text-[11px] font-code">
-          <span class="text-slate-500">Oleadas: <b class="text-white">${lvl.maxWaves}</b></span>
+        <div class="flex items-center justify-between pt-2.5 border-t border-white/10 text-xs font-code">
+          <span class="text-slate-400">Oleadas: <b class="text-white">${lvl.maxWaves}</b></span>
           <span class="text-yellow-400 font-bold">$${lvl.startMoney} inicial</span>
         </div>
       `;
@@ -349,7 +398,7 @@ const EventHandlers = {
     Object.entries(DIFFICULTY_SETTINGS).forEach(([key, diff]) => {
       const isSelected = GameState.currentDifficulty === key;
       const btn = document.createElement('button');
-      btn.className = `py-2 px-4 rounded-xl text-xs font-bold uppercase transition-all border font-heading ${isSelected ? 'bg-green-500 text-black border-green-400 shadow-lg scale-105 neon-border' : 'bg-[#080d18] text-slate-400 border-white/10 hover:text-white hover:border-white/20'}`;
+      btn.className = `py-2.5 px-5 rounded-xl text-xs font-bold uppercase transition-all border font-heading cursor-pointer ${isSelected ? 'bg-green-500 text-black border-green-400 shadow-lg scale-105 neon-border' : 'bg-[#080d18] text-slate-400 border-white/10 hover:text-white hover:border-white/20'}`;
       btn.textContent = diff.name;
 
       btn.addEventListener('click', () => {
@@ -379,17 +428,17 @@ const EventHandlers = {
     container.innerHTML = CODEX_DATA.towers.map(t => {
       const def = TOWER_CONFIG[t.id];
       return `
-        <div class="p-3.5 bg-black/40 border border-white/10 rounded-xl space-y-1.5">
-          <div class="flex items-center gap-2.5">
-            <span class="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs" style="background:${def.color}20;color:${def.color};border:1px solid ${def.color}">${def.icon}</span>
+        <div class="p-4 bg-black/50 border border-white/10 rounded-2xl space-y-2">
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs" style="background:${def.color}20;color:${def.color};border:1.5px solid ${def.color}">${def.icon}</span>
             <div>
-              <div class="text-sm font-bold text-white font-heading">${t.title}</div>
-              <div class="text-[11px] text-cyan-400 font-code">${t.concept}</div>
+              <div class="text-base font-bold text-white font-heading">${t.title}</div>
+              <div class="text-xs text-cyan-400 font-code">${t.concept}</div>
             </div>
           </div>
           <p class="text-xs text-slate-300 leading-relaxed">${t.desc}</p>
-          <div class="text-[11px] text-yellow-300/90"><span class="text-slate-500 font-medium">💡 Ejemplo Real:</span> ${t.realWorldExample}</div>
-          <div class="text-[11px] text-green-300/90"><span class="text-slate-500 font-medium">🎯 Consejo Táctico:</span> ${t.tip}</div>
+          <div class="text-xs text-yellow-300/90"><span class="text-slate-500 font-medium">Ejemplo Real:</span> ${t.realWorldExample}</div>
+          <div class="text-xs text-green-300/90"><span class="text-slate-500 font-medium">Consejo Táctico:</span> ${t.tip}</div>
         </div>
       `;
     }).join('');
@@ -402,10 +451,10 @@ const EventHandlers = {
     const container = document.getElementById('codex-content');
     container.innerHTML = CODEX_DATA.threats.map(th => {
       return `
-        <div class="p-3.5 bg-black/40 border border-white/10 rounded-xl space-y-1">
+        <div class="p-4 bg-black/50 border border-white/10 rounded-2xl space-y-1.5">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-white font-heading">${th.name}</span>
-            <span class="text-[10px] px-2 py-0.5 rounded-md font-bold font-code ${th.danger.includes('Jefe') || th.danger.includes('Extremo') ? 'bg-red-500/30 text-red-300' : 'bg-yellow-500/20 text-yellow-400'}">${th.danger}</span>
+            <span class="text-sm font-bold text-white font-heading">${th.name}</span>
+            <span class="text-xs px-2.5 py-0.5 rounded-lg font-bold font-code ${th.danger.includes('Jefe') || th.danger.includes('Extremo') ? 'bg-red-500/30 text-red-300' : 'bg-yellow-500/20 text-yellow-400'}">${th.danger}</span>
           </div>
           <p class="text-xs text-slate-300 leading-relaxed">${th.desc}</p>
         </div>
@@ -431,5 +480,17 @@ const EventHandlers = {
     this.hideScreen('game-container');
     this.showScreen('victory-screen', 'flex');
     document.getElementById('v-score').textContent = score.toLocaleString();
+
+    if (StorySystem.isStoryMode && StorySystem.activeChapter) {
+      const nextChapterId = StorySystem.activeChapter.id + 1;
+      const vBtn = document.getElementById('btn-levels-v');
+      if (vBtn) {
+        if (nextChapterId <= STORY_CHAPTERS.length) {
+          vBtn.textContent = `SIGUIENTE: CAPÍTULO ${nextChapterId}`;
+        } else {
+          vBtn.textContent = 'CAMPAÑA COMPLETADA';
+        }
+      }
+    }
   },
 };

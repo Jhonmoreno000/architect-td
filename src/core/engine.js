@@ -522,7 +522,7 @@ class GameEngine {
       MinimapSystem.render(this);
     }
 
-    if (typeof AchievementSystem !== 'undefined') {
+    if (typeof AchievementSystem !== 'undefined' && typeof AchievementSystem.render === 'function') {
       AchievementSystem.render(ctx, this.canvas.width, this.canvas.height);
     }
 

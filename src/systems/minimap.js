@@ -1,41 +1,25 @@
 // ============================================
-// SYSTEMS - Tactical Minimap with Real-Time Radar
+// SYSTEMS - Tactical Widescreen Radar with Real-Time Telemetry
 // ============================================
 
 /**
- * MinimapSystem - Mini-mapa táctico con vista global del campo de batalla.
- *
- * Renderiza una vista reducida del mapa mostrando:
- * - Core (verde pulsante)
- * - Sub-nodes y aux cores (cyan)
- * - Torres colocadas (colores de la torre)
- * - Enemigos (con indicador de boss más grande)
- * - Sweep radar animado cuando hay enemigos
- * - Focus target (crosshair rojo)
- * - Conteo de enemigos y bosses en la esquina
- *
- * Interactividad: Click en el minimap activa Focus Target en esa posición.
- *
- * @namespace MinimapSystem
+ * MinimapSystem - Mini-mapa táctico widescreen con telemetría perimetral real.
  */
 const MinimapSystem = {
-  size: 160,
-  padding: 10,
+  width: 256,
+  height: 158,
   canvas: null,
   ctx: null,
 
-  /** Inicializa el canvas del minimap y el listener de clicks. */
   init() {
     const container = document.getElementById('minimap-container');
     if (!container) return;
 
     this.canvas = document.createElement('canvas');
-    this.canvas.width = this.size;
-    this.canvas.height = this.size;
-    this.canvas.style.borderRadius = '12px';
-    this.canvas.style.border = '1px solid rgba(0,255,65,0.3)';
-    this.canvas.style.boxShadow = '0 0 15px rgba(0,255,65,0.1)';
-    this.canvas.style.cursor = 'pointer';
+    this.canvas.width = this.width;
+    this.canvas.height = this.height;
+    this.canvas.className = 'w-full h-auto block rounded-xl';
+    this.canvas.style.cursor = 'crosshair';
 
     container.innerHTML = '';
     container.appendChild(this.canvas);
@@ -53,143 +37,179 @@ const MinimapSystem = {
     });
   },
 
-  /**
-   * Renderiza el minimap completo cada frame.
-   * @param {GameEngine} engine - Instancia del motor del juego
-   */
   render(engine) {
     if (!this.ctx || !engine) return;
     const ctx = this.ctx;
-    const scale = this.size / engine.canvas.width;
-
-    ctx.clearRect(0, 0, this.size, this.size);
-
-    ctx.fillStyle = '#040810';
-    ctx.fillRect(0, 0, this.size, this.size);
-
-    ctx.strokeStyle = 'rgba(0,255,65,0.08)';
-    ctx.lineWidth = 0.5;
-    const gridStep = engine.gridSize * scale;
-    for (let x = 0; x < this.size; x += gridStep) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, this.size);
-      ctx.stroke();
-    }
-    for (let y = 0; y < this.size; y += gridStep) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(this.size, y);
-      ctx.stroke();
-    }
-
-    const coreX = engine.core.x * scale;
-    const coreY = engine.core.y * scale;
+    const scaleX = this.width / engine.canvas.width;
+    const scaleY = this.height / engine.canvas.height;
     const time = performance.now() / 1000;
-    const pulse = Math.sin(time * 3) * 0.3 + 0.7;
 
+    ctx.clearRect(0, 0, this.width, this.height);
+
+    // Background Grid
+    ctx.fillStyle = '#040810';
+    ctx.fillRect(0, 0, this.width, this.height);
+
+    ctx.strokeStyle = 'rgba(0, 255, 65, 0.06)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < this.width; x += 20) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0); ctx.lineTo(x, this.height);
+      ctx.stroke();
+    }
+    for (let y = 0; y < this.height; y += 20) {
+      ctx.beginPath();
+      ctx.moveTo(0, y); ctx.lineTo(this.width, y);
+      ctx.stroke();
+    }
+
+    const coreX = engine.core.x * scaleX;
+    const coreY = engine.core.y * scaleY;
+
+    // Concentric Radar Rings
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)';
+    ctx.lineWidth = 1;
+    for (let r = 25; r < this.width; r += 35) {
+      ctx.beginPath();
+      ctx.arc(coreX, coreY, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Active Radar Sweep
+    const radarSweep = (time * 2.0) % (Math.PI * 2);
     ctx.save();
-    ctx.shadowBlur = 6 * pulse;
-    ctx.shadowColor = '#00ff41';
+    ctx.globalAlpha = 0.18;
     ctx.fillStyle = '#00ff41';
     ctx.beginPath();
-    ctx.arc(coreX, coreY, 3, 0, Math.PI * 2);
+    ctx.moveTo(coreX, coreY);
+    ctx.arc(coreX, coreY, this.width * 0.75, radarSweep - 0.45, radarSweep);
+    ctx.closePath();
     ctx.fill();
     ctx.restore();
 
+    // Sub-Nodes and Auxiliary Cores
     for (const node of engine.subNodes) {
       if (!node.alive) continue;
       ctx.fillStyle = '#8be9fd';
       ctx.beginPath();
-      ctx.arc(node.x * scale, node.y * scale, 2, 0, Math.PI * 2);
+      ctx.arc(node.x * scaleX, node.y * scaleY, 3, 0, Math.PI * 2);
       ctx.fill();
     }
 
     for (const aux of engine.auxCores) {
       ctx.fillStyle = '#8be9fd';
       ctx.beginPath();
-      ctx.arc(aux.x * scale, aux.y * scale, 2.5, 0, Math.PI * 2);
+      ctx.arc(aux.x * scaleX, aux.y * scaleY, 3.5, 0, Math.PI * 2);
       ctx.fill();
     }
 
+    // Placed Defense Towers
     for (const tower of engine.towers) {
-      const tx = (tower.x + tower.size / 2) * scale;
-      const ty = (tower.y + tower.size / 2) * scale;
+      const tx = (tower.x + tower.size / 2) * scaleX;
+      const ty = (tower.y + tower.size / 2) * scaleY;
       ctx.fillStyle = tower.isCrashed ? '#ef4444' : tower.color;
-      ctx.globalAlpha = tower.isCrashed ? 0.5 : 0.8;
-      ctx.fillRect(tx - 1.5, ty - 1.5, 3, 3);
+      ctx.globalAlpha = tower.isCrashed ? 0.4 : 0.85;
+      ctx.fillRect(tx - 2, ty - 2, 4, 4);
       ctx.globalAlpha = 1;
     }
 
-    const enemyCount = engine.enemies.length;
-    if (enemyCount > 0) {
-      const radarSweep = (time * 1.5) % (Math.PI * 2);
-      ctx.save();
-      ctx.globalAlpha = 0.15;
-      ctx.fillStyle = '#ff0040';
-      ctx.beginPath();
-      ctx.moveTo(coreX, coreY);
-      ctx.arc(coreX, coreY, this.size * 0.8, radarSweep - 0.4, radarSweep);
-      ctx.closePath();
-      ctx.fill();
-      ctx.globalAlpha = 1;
-      ctx.restore();
-    }
+    // Core Blip
+    const pulse = Math.sin(time * 3) * 0.3 + 0.7;
+    ctx.save();
+    ctx.shadowBlur = 8 * pulse;
+    ctx.shadowColor = '#00ff41';
+    ctx.fillStyle = '#00ff41';
+    ctx.beginPath();
+    ctx.arc(coreX, coreY, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Enemies & Threat Distance Vector
+    let nearestDist = 9999;
+    let nearestEnemy = null;
+    let northCount = 0, southCount = 0, eastCount = 0, westCount = 0;
 
     for (const enemy of engine.enemies) {
       if (!enemy.alive) continue;
-      const ex = enemy.x * scale;
-      const ey = enemy.y * scale;
+      const ex = enemy.x * scaleX;
+      const ey = enemy.y * scaleY;
+
+      // Sector classification
+      if (enemy.y < engine.canvas.height * 0.35) northCount++;
+      else if (enemy.y > engine.canvas.height * 0.65) southCount++;
+      if (enemy.x > engine.canvas.width * 0.65) eastCount++;
+      else if (enemy.x < engine.canvas.width * 0.35) westCount++;
+
+      const dist = Math.hypot(enemy.x - engine.core.x, enemy.y - engine.core.y);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearestEnemy = { x: ex, y: ey, realDist: dist };
+      }
 
       ctx.fillStyle = enemy.color;
-      ctx.globalAlpha = enemy.isCloaked ? 0.3 : 0.9;
+      ctx.globalAlpha = enemy.isCloaked ? 0.25 : 0.95;
 
       if (enemy.isBoss) {
-        ctx.shadowBlur = 4;
+        ctx.shadowBlur = 6;
         ctx.shadowColor = enemy.color;
         ctx.beginPath();
-        ctx.arc(ex, ey, 3, 0, Math.PI * 2);
+        ctx.arc(ex, ey, 4.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
       } else {
         ctx.beginPath();
-        ctx.arc(ex, ey, 1.5, 0, Math.PI * 2);
+        ctx.arc(ex, ey, 2.2, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.globalAlpha = 1;
     }
 
-    if (engine.focusTarget) {
-      const fx = engine.focusTarget.x * scale;
-      const fy = engine.focusTarget.y * scale;
-      ctx.strokeStyle = '#ff0055';
+    // Draw Vector Line to Closest Threat
+    if (nearestEnemy && engine.enemies.length > 0) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 0, 85, 0.6)';
       ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
       ctx.beginPath();
-      ctx.arc(fx, fy, 4, 0, Math.PI * 2);
+      ctx.moveTo(coreX, coreY);
+      ctx.lineTo(nearestEnemy.x, nearestEnemy.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Manual Focus Target Reticle
+    if (engine.focusTarget) {
+      const fx = engine.focusTarget.x * scaleX;
+      const fy = engine.focusTarget.y * scaleY;
+      ctx.strokeStyle = '#ff0055';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(fx, fy, 6, 0, Math.PI * 2);
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(fx - 6, fy);
-      ctx.lineTo(fx + 6, fy);
-      ctx.moveTo(fx, fy - 6);
-      ctx.lineTo(fx, fy + 6);
+      ctx.moveTo(fx - 9, fy); ctx.lineTo(fx + 9, fy);
+      ctx.moveTo(fx, fy - 9); ctx.lineTo(fx, fy + 9);
       ctx.stroke();
     }
 
-    ctx.strokeStyle = 'rgba(0,255,65,0.25)';
+    // Border Frame
+    ctx.strokeStyle = 'rgba(0, 255, 65, 0.3)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(0, 0, this.size, this.size);
+    ctx.strokeRect(0.5, 0.5, this.width - 1, this.height - 1);
 
-    const totalEnemies = engine.enemies.length;
-    const bossCount = engine.enemies.filter(e => e.isBoss).length;
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(2, this.size - 16, 70, 14);
-    ctx.fillStyle = '#00ff41';
-    ctx.font = 'bold 8px monospace';
+    // Live Real-Time Telemetry Bar at bottom of Radar
+    ctx.fillStyle = 'rgba(4, 8, 16, 0.88)';
+    ctx.fillRect(1, this.height - 18, this.width - 2, 17);
+
+    ctx.font = 'bold 9px monospace';
     ctx.textAlign = 'left';
-    ctx.fillText(`${totalEnemies} ENEM${totalEnemies !== 1 ? 'S' : ''}`, 5, this.size - 6);
-    if (bossCount > 0) {
-      ctx.fillStyle = '#ff0055';
-      ctx.fillText(`BOSS:${bossCount}`, 42, this.size - 6);
-    }
+    ctx.fillStyle = '#00ff41';
+    ctx.fillText(`TOTAL: ${engine.enemies.length}`, 6, this.height - 6);
+
+    const proxText = nearestEnemy ? `PROX: ${Math.round(nearestEnemy.realDist)}px` : 'SECTOR CLEAR';
+    const proxColor = nearestEnemy && nearestEnemy.realDist < 180 ? '#ff0055' : nearestEnemy && nearestEnemy.realDist < 320 ? '#eab308' : '#00f0ff';
+    ctx.fillStyle = proxColor;
+    ctx.textAlign = 'right';
+    ctx.fillText(proxText, this.width - 6, this.height - 6);
   }
 };

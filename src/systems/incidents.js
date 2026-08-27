@@ -9,7 +9,7 @@ const IncidentSystem = {
   triggerRandomIncident() {
     const available = INCIDENT_QUIZZES.filter(q => !this.answeredIncidents.has(q.id));
     if (available.length === 0) {
-      this.answeredIncidents.clear(); // Recycle
+      this.answeredIncidents.clear();
     }
     const quiz = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : INCIDENT_QUIZZES[0];
     this.showIncidentModal(quiz);
@@ -36,7 +36,7 @@ const IncidentSystem = {
 
     quiz.options.forEach((opt, idx) => {
       const btn = document.createElement('button');
-      btn.className = 'w-full p-3 text-left rounded-xl border border-white/10 bg-[#080d18] hover:border-cyan-500/50 hover:bg-[#0e1626] transition-all text-xs text-slate-200 font-sans leading-relaxed';
+      btn.className = 'w-full p-3.5 text-left rounded-xl border border-white/10 bg-[#080d18] hover:border-cyan-500/50 hover:bg-[#0e1626] transition-all text-xs text-slate-200 font-sans leading-relaxed cursor-pointer';
       btn.textContent = opt.text;
 
       btn.addEventListener('click', () => {
@@ -53,21 +53,25 @@ const IncidentSystem = {
   handleAnswer(selectedOption, quiz) {
     const resultBox = document.getElementById('incident-result');
     const optionsContainer = document.getElementById('incident-options');
-    optionsContainer.innerHTML = ''; // Hide buttons
+    optionsContainer.innerHTML = '';
 
     resultBox.classList.remove('hidden');
 
     if (selectedOption.correct) {
       AudioSystem.play('wave');
+      if (typeof AchievementSystem !== 'undefined') {
+        AchievementSystem.check('incident_master');
+      }
+
       resultBox.className = 'p-4 rounded-xl border border-green-500/40 bg-green-950/30 text-green-300 space-y-2';
       resultBox.innerHTML = `
         <div class="text-sm font-bold font-heading flex items-center gap-2 text-green-400">
           <span>✓ INCIDENTE MITIGADO CON ÉXITO</span>
-          <span class="text-yellow-400 font-code font-bold">+$$${quiz.reward.money}</span>
+          <span class="text-yellow-400 font-code font-bold">+$${quiz.reward.money}</span>
         </div>
         <p class="text-xs text-slate-200 leading-relaxed">${selectedOption.feedback}</p>
-        <div class="text-[11px] text-cyan-400 font-code font-bold">Recompensa: ${quiz.reward.buff}</div>
-        <button id="btn-continue-incident" class="w-full mt-2 py-2 px-4 rounded-lg bg-green-600 hover:bg-green-500 text-black font-bold uppercase text-xs transition-all font-heading">
+        <div class="text-xs text-cyan-400 font-code font-bold">Recompensa: ${quiz.reward.buff}</div>
+        <button id="btn-continue-incident" class="w-full mt-2 py-2.5 px-4 rounded-xl bg-green-600 hover:bg-green-500 text-black font-bold uppercase text-xs transition-all font-heading cursor-pointer shadow-md">
           CONTINUAR AL DESPLIEGUE ▶
         </button>
       `;
@@ -83,8 +87,8 @@ const IncidentSystem = {
           <span>✕ DECISIÓN DE ARQUITECTURA DEFICIENTE</span>
         </div>
         <p class="text-xs text-slate-200 leading-relaxed">${selectedOption.feedback}</p>
-        <div class="text-[11px] text-slate-400">Lección aprendida: Revisa las guías de ingeniería en el Códice.</div>
-        <button id="btn-continue-incident" class="w-full mt-2 py-2 px-4 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold uppercase text-xs transition-all font-heading">
+        <div class="text-xs text-slate-400">Lección aprendida: Revisa las guías de ingeniería en el Códice.</div>
+        <button id="btn-continue-incident" class="w-full mt-2 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold uppercase text-xs transition-all font-heading cursor-pointer shadow-md">
           CONTINUAR AL DESPLIEGUE ▶
         </button>
       `;

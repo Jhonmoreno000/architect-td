@@ -1,11 +1,11 @@
 // ============================================
-// CONFIG - DevOps Incidents, RCA Quizzes & Architecture Lore
+// CONFIG - DevOps Incidents, RCA Quizzes & Architecture Lore (No Emojis)
 // ============================================
 
 const INCIDENT_QUIZZES = [
   {
     id: 'cache_stampede',
-    title: '🚨 PAGERDUTY: Incidente de Caída por Thundering Herd',
+    title: '[PAGERDUTY] Incidente de Caída por Thundering Herd',
     scenario: 'Tu base de datos relacional colapsó porque expiró la caché de la página principal en el Black Friday y 100,000 usuarios consultaron la base de datos a la vez (Cache Stampede).',
     question: '¿Qué patrón de arquitectura previene este problema en producción?',
     options: [
@@ -17,7 +17,7 @@ const INCIDENT_QUIZZES = [
   },
   {
     id: 'circuit_breaker_cascade',
-    title: '🚨 PAGERDUTY: Falla en Cascada de Microservicios',
+    title: '[PAGERDUTY] Falla en Cascada de Microservicios',
     scenario: 'El microservicio de Pagos está respondiendo con 15 segundos de latencia. Los servicios de Carrito y Checkout están acumulando hilos y quedándose sin memoria.',
     question: '¿Cómo evitas que la lentitud de un servicio secundario tumbe todo el ecosistema?',
     options: [
@@ -29,7 +29,7 @@ const INCIDENT_QUIZZES = [
   },
   {
     id: 'ddos_syn_flood',
-    title: '🚨 ALERTA SOC: Ataque Masivo de Denegación de Servicio (SYN Flood)',
+    title: '[ALERTA SOC] Ataque Masivo de Denegación de Servicio (SYN Flood)',
     scenario: 'Los firewalls perimetrales reportan 50 millones de paquetes SYN por segundo falsificando IPs de origen para agotar la tabla de conexiones TCP.',
     question: '¿Qué mecanismo en capas de red (L4/L7) neutraliza este ataque?',
     options: [
@@ -41,7 +41,7 @@ const INCIDENT_QUIZZES = [
   },
   {
     id: 'sql_injection_breach',
-    title: '🚨 AUDITORÍA SEC: Inyección SQL detectada en el Ingress',
+    title: '[AUDITORÍA SEC] Inyección SQL detectada en el Ingress',
     scenario: 'Un atacante está enviando `1 OR 1=1; DROP TABLE users;` a través de los parámetros del formulario de búsqueda.',
     question: '¿Cuál es la práctica estándar de ingeniería para erradicar SQLi?',
     options: [
@@ -53,7 +53,7 @@ const INCIDENT_QUIZZES = [
   },
   {
     id: 'zero_trust_mtls',
-    title: '🚨 INFORME DE SEGURIDAD: Infiltración de Red Interna',
+    title: '[INFORME DE SEGURIDAD] Infiltración de Red Interna',
     scenario: 'Un atacante logró entrar a la red interna (VPC) tras vulnerar una VPN corporativa.',
     question: 'Bajo el paradigma Zero-Trust, ¿cómo evitas el movimiento lateral del intruso?',
     options: [
@@ -65,7 +65,7 @@ const INCIDENT_QUIZZES = [
   },
   {
     id: 'event_driven_kafka',
-    title: '🚨 ARQUITECTURA: Desacoplamiento de Picos de Facturación',
+    title: '[ARQUITECTURA] Desacoplamiento de Picos de Facturación',
     scenario: 'Durante el Cyber Monday, el servicio de notificaciones por email bloquea el checkout de compras porque SMTP es muy lento.',
     question: '¿Qué patrón de mensajería desacopla la compra inmediata del envío de correos?',
     options: [

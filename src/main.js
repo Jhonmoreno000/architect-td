@@ -37,16 +37,17 @@ const GameState = {
     EventHandlers.hideScreen('level-select-screen');
     EventHandlers.hideScreen('gameover-screen');
     EventHandlers.hideScreen('victory-screen');
+    EventHandlers.hideScreen('story-modal');
     EventHandlers.showScreen('game-container', 'flex');
 
     this.currentLevel = LEVEL_CONFIGS.find(l => l.id === this.selectedLevelId) || LEVEL_CONFIGS[0];
     this.difficultySettings = DIFFICULTY_SETTINGS[this.currentDifficulty] || DIFFICULTY_SETTINGS.staging;
 
     const canvas = document.getElementById('gameCanvas');
-    if (!this.engine) {
-      this.engine = new GameEngine(canvas);
+    if (this.engine) {
+      this.engine.stop();
     }
-
+    this.engine = new GameEngine(canvas);
     this.engine.loadLevel(this.currentLevel);
 
     this.engine.onEnemyReached = (e) => CombatSystem.handleEnemyReached(e);
@@ -96,7 +97,7 @@ const GameState = {
     if (this.engine) this.engine.stop();
     this.init();
     const pauseBtn = document.getElementById('btn-pause');
-    if (pauseBtn) pauseBtn.textContent = '⏸ PAUSE';
+    if (pauseBtn) pauseBtn.textContent = 'PAUSE';
   },
 
   selectPlacedTower(tower) {
@@ -111,22 +112,24 @@ const GameState = {
   togglePause() {
     this.paused = !this.paused;
     if (this.paused) {
-      this.engine.stop();
+      if (this.engine) this.engine.stop();
     } else {
-      this.engine.start();
+      if (this.engine) this.engine.start();
     }
+    const pauseBtn = document.getElementById('btn-pause');
+    if (pauseBtn) pauseBtn.textContent = this.paused ? 'PLAY' : 'PAUSE';
   },
 
   triggerGameOver() {
     this.isGameOver = true;
-    this.engine.stop();
+    if (this.engine) this.engine.stop();
     AudioSystem.play('gameover');
     EventHandlers.showGameOver(WaveSystem.wave, this.score);
   },
 
   victory() {
     this.isGameOver = true;
-    this.engine.stop();
+    if (this.engine) this.engine.stop();
     AudioSystem.play('wave');
     if (typeof AchievementSystem !== 'undefined') {
       AchievementSystem.check('victory');

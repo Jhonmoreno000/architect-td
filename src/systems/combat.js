@@ -1,32 +1,14 @@
 // ============================================
-// SYSTEMS - Combat, DevOps Abilities & Loot Drop Engine
+// SYSTEMS - Combat, DevOps Abilities & Loot Drop Engine (Clean & Robust)
 // ============================================
 
 /**
  * CombatSystem - Sistema central de combate, habilidades DevOps y loot drops.
- *
- * Responsabilidades:
- * - dealDamage(): Aplica daño con crits (12% chance, 1.6x), bonus de tipo, y overclock
- * - applyAreaDamage(): Daño en área con falloff radial
- * - handleEnemyReached(): Reduce vidas cuando un enemigo llega al core
- * - handleEnemyKilled(): Otorga dinero, score, combo bonus, loot drops, y checkea achievements
- * - triggerAbility(): Activa habilidades DevOps (autoscale, shield, reboot)
- *
- * Combo system: Kill streaks dan bonus de score progresivo (hasta 2.0x)
- *
- * @namespace CombatSystem
  */
 const CombatSystem = {
   combo: 0,
   comboTimer: 0,
 
-  /**
-   * Aplica daño a un enemigo con crits y bonuses.
-   * @param {Request} enemy - Enemigo objetivo
-   * @param {number} amount - Daño base
-   * @param {string} [color='#00ff41'] - Color del floating text
-   * @param {Object} [sourceTower=null] - Torre origen (para tracking y bonuses)
-   */
   dealDamage(enemy, amount, color = '#00ff41', sourceTower = null) {
     if (!enemy || !enemy.alive) return;
 
@@ -40,7 +22,6 @@ const CombatSystem = {
       }
     }
 
-    // Overclock 1.5x damage bonus
     if (sourceTower && sourceTower.overclockTimer > 0) {
       finalDamage = Math.round(finalDamage * 1.5);
     }
@@ -52,7 +33,6 @@ const CombatSystem = {
       enemy.lastHitTower = sourceTower;
     }
 
-    // Floating damage numbers
     if (GameState.engine) {
       const text = isCrit ? `${Math.round(finalDamage)}!` : `${Math.round(finalDamage)}`;
       GameState.engine.addFloatingText(
@@ -80,11 +60,6 @@ const CombatSystem = {
     }
   },
 
-  /**
-   * Maneja cuando un enemigo llega al core.
-   * Aplica daño de vidas, considera escudo activo, y verifica game over.
-   * @param {Request} enemy - Enemigo que llegó
-   */
   handleEnemyReached(enemy) {
     if (GameState.shieldCharges > 0) {
       GameState.shieldCharges--;
@@ -94,7 +69,7 @@ const CombatSystem = {
         if (GameState.statsShieldBlocks >= 10) AchievementSystem.check('shield_save');
       }
       if (GameState.engine) {
-        GameState.engine.addFloatingText(GameState.engine.core.x, GameState.engine.core.y - 25, 'CLOUDFLARE ABSORBIÓ PAQUETE', '#00f0ff', 12, true);
+        GameState.engine.addFloatingText(GameState.engine.core.x, GameState.engine.core.y - 25, 'ESCUDO BLOQUEÓ AMENAZA', '#00f0ff', 12, true);
         GameState.engine.addRingShockwave(GameState.engine.core.x, GameState.engine.core.y, '#00f0ff', 50);
       }
       GameState.updateUI();
@@ -117,10 +92,6 @@ const CombatSystem = {
     }
   },
 
-  /**
-   * Maneja la muerte de un enemigo: otorga recompensas, combo, loot, y checkea logros.
-   * @param {Request} enemy - Enemigo que murió
-   */
   handleEnemyKilled(enemy) {
     this.combo++;
     this.comboTimer = 120;
@@ -133,12 +104,10 @@ const CombatSystem = {
     GameState.score += scoreAdd;
     GameState.statsKills = (GameState.statsKills || 0) + 1;
 
-    // Track kills for the source tower
     if (enemy.lastHitTower && typeof enemy.lastHitTower.kills !== 'undefined') {
       enemy.lastHitTower.kills++;
     }
 
-    // Achievement checks
     if (typeof AchievementSystem !== 'undefined') {
       if (GameState.statsKills === 1) AchievementSystem.check('first_blood');
       if (GameState.statsKills >= 100) AchievementSystem.check('kill_100');
@@ -147,6 +116,7 @@ const CombatSystem = {
       if (this.combo >= 25) AchievementSystem.check('combo_25');
       if (GameState.money >= 1000) AchievementSystem.check('money_1000');
       if (enemy.isBoss) AchievementSystem.check('boss_slain');
+      if (enemy.isFinalBoss) AchievementSystem.check('apex_slayer');
     }
 
     // Check Loot Drop Chance (Memory Dump, Energy, Overclock)
@@ -156,12 +126,12 @@ const CombatSystem = {
       GameState.engine.addLootDrop(enemy.x, enemy.y, pickedDrop);
     }
 
-    // Split mechanic for SQL Injection
+    // Split mechanic for SQL Injection in 360 mode
     if (enemy.splitsOnDeath && GameState.engine) {
       GameState.engine.addFloatingText(enemy.x, enemy.y - 15, 'SUB-QUERIES SPLIT!', '#f97316', 10, true);
+      const targetPos = enemy.targetPos || { x: GameState.engine.core.x, y: GameState.engine.core.y };
       for (let s = 0; s < 2; s++) {
-        const minion = new Request(enemy.x + (s === 0 ? -6 : 6), enemy.y, enemy.path, 'botnet', GameState.currentDifficulty, true);
-        minion.pathIndex = Math.min(enemy.path.length - 1, enemy.pathIndex);
+        const minion = new Request(enemy.x + (s === 0 ? -8 : 8), enemy.y, targetPos, 'botnet', GameState.currentDifficulty, true);
         GameState.engine.enemies.push(minion);
       }
     }
@@ -170,7 +140,7 @@ const CombatSystem = {
       AudioSystem.play('wave');
       if (GameState.engine) {
         GameState.engine.triggerScreenShake(14);
-        GameState.engine.addFloatingText(enemy.x, enemy.y - 25, '🚨 INCIDENTE RESUELTO! +$$$', '#00ff41', 16, true);
+        GameState.engine.addFloatingText(enemy.x, enemy.y - 25, 'INCIDENTE RESUELTO! +$$$', '#00ff41', 16, true);
         GameState.engine.addRingShockwave(enemy.x, enemy.y, '#00ff41', 80);
       }
     } else {
@@ -180,37 +150,33 @@ const CombatSystem = {
     GameState.updateUI();
   },
 
-  /**
-   * Activa una habilidad DevOps por ID.
-   * @param {string} abilityId - 'autoscale' | 'shield' | 'reboot'
-   */
   triggerAbility(abilityId) {
     if (!GameState.gameStarted || GameState.isGameOver || GameState.paused) return;
 
     if (abilityId === 'autoscale') {
       if (GameState.abilityCooldowns.autoscale > 0) return;
-      GameState.abilityCooldowns.autoscale = DEVOPS_ABILITIES.autoscale.cooldown;
+      GameState.abilityCooldowns.autoscale = DEVOPS_ABILITIES.autoscale.cooldown * (GameState.abilityCooldownMultiplier || 1.0);
       GameState.activeAbilities.autoscale = DEVOPS_ABILITIES.autoscale.duration;
       AudioSystem.play('ability');
       if (GameState.engine) {
-        GameState.engine.addFloatingText(GameState.engine.canvas.width / 2, 80, '⚡ CLUSTER AUTO-SCALED: 2X FIRE RATE', '#00f0ff', 14, true);
+        GameState.engine.addFloatingText(GameState.engine.canvas.width / 2, 80, 'CLUSTER AUTO-SCALED: 2X FIRE RATE', '#00f0ff', 14, true);
       }
     } else if (abilityId === 'shield') {
       if (GameState.abilityCooldowns.shield > 0) return;
-      GameState.abilityCooldowns.shield = DEVOPS_ABILITIES.shield.cooldown;
+      GameState.abilityCooldowns.shield = DEVOPS_ABILITIES.shield.cooldown * (GameState.abilityCooldownMultiplier || 1.0);
       GameState.shieldCharges = DEVOPS_ABILITIES.shield.charges;
       AudioSystem.play('ability');
       if (GameState.engine) {
-        GameState.engine.addFloatingText(GameState.engine.canvas.width / 2, 80, '🛡️ CLOUDFLARE SHIELD ACTIVE (5 CARGAS)', '#f97316', 14, true);
+        GameState.engine.addFloatingText(GameState.engine.canvas.width / 2, 80, 'DDoS SHIELD ACTIVO (5 CARGAS)', '#f97316', 14, true);
         GameState.engine.addRingShockwave(GameState.engine.core.x, GameState.engine.core.y, '#f97316', 60);
       }
     } else if (abilityId === 'reboot') {
       if (GameState.abilityCooldowns.reboot > 0) return;
-      GameState.abilityCooldowns.reboot = DEVOPS_ABILITIES.reboot.cooldown;
+      GameState.abilityCooldowns.reboot = DEVOPS_ABILITIES.reboot.cooldown * (GameState.abilityCooldownMultiplier || 1.0);
       AudioSystem.play('explosion');
       if (GameState.engine) {
         GameState.engine.triggerScreenShake(18);
-        GameState.engine.addFloatingText(GameState.engine.canvas.width / 2, 80, '💀 HARD REBOOT (KILL -9) EMP LANZADO!', '#ff3366', 15, true);
+        GameState.engine.addFloatingText(GameState.engine.canvas.width / 2, 80, 'HARD REBOOT (KILL -9) EMP LANZADO!', '#ff3366', 15, true);
 
         GameState.engine.addRingShockwave(GameState.engine.canvas.width / 2, GameState.engine.canvas.height / 2, '#ff3366', 400);
 
