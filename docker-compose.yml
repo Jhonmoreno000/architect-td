@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  architect-td:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: architect_tower_defense
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - NODE_ENV=production
+    labels:
+      - "com.architect-td.description=DevOps & Software Architecture Tower Defense Game"
+      - "com.architect-td.version=2.7.0"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
