@@ -61,6 +61,11 @@ const files = [
   'src/systems/combat.js',
   'src/systems/grid.js',
   'src/systems/wave.js',
+  'src/ui/code-editor.js',
+  'src/core/sandbox.js',
+  'src/systems/tower-code.js',
+  'src/systems/dsa-visualizer.js',
+  'src/systems/iac.js',
   'src/ui/shop.js',
   'src/ui/hud.js',
   'src/ui/events.js',
@@ -77,7 +82,7 @@ for (const f of files) {
     console.error(`Syntax error in ${f}:`, err.message);
   }
 }
-assert(allModulesOk, 'All 39 frontend and system scripts compile without syntax errors');
+assert(allModulesOk, `All ${files.length} frontend, system and educational scripts compile without syntax errors`);
 
 // 2. Mock browser environment to evaluate configs in global scope
 global.window = global;
@@ -127,6 +132,40 @@ INCIDENT_QUIZZES.forEach(q => {
   const hasCorrect = q.options.some(o => o.correct === true);
   assert(hasCorrect, `Quiz [${q.id}] has a validated correct answer`);
 });
+
+console.log('\nTEST GROUP 6: Educational Programmable Engine, Sandbox & IaC Verification');
+vm.runInThisContext(fs.readFileSync(path.join(__dirname, '../src/core/sandbox.js'), 'utf8'));
+vm.runInThisContext(fs.readFileSync(path.join(__dirname, '../src/systems/iac.js'), 'utf8'));
+
+// 1. Test Sandbox execution
+const sampleCode = `
+function selectTarget(enemies, tower) {
+  return enemies.find(e => e.hp > 100) || enemies[0];
+}
+`;
+const fakeEnemies = [{ name: 'E1', hp: 50 }, { name: 'E2', hp: 150 }];
+const evalResult = SandboxEvaluator.execute(sampleCode, 'selectTarget', [fakeEnemies, {}]);
+assert(evalResult.success && evalResult.result.name === 'E2', 'SandboxEvaluator executes user algorithm correctly and selects optimal target');
+
+// 2. Test Sandbox security block
+const unsafeResult = SandboxEvaluator.execute('function selectTarget() { window.hack = true; }', 'selectTarget', []);
+assert(!unsafeResult.success && unsafeResult.error.includes('seguridad'), 'SandboxEvaluator blocks unauthorized access to browser globals');
+
+// 3. Test Incidents code challenges
+let challengesCount = 0;
+INCIDENT_QUIZZES.forEach(q => {
+  if (q.codeChallenge && Array.isArray(q.codeChallenge.tests) && q.codeChallenge.tests.length > 0) {
+    challengesCount++;
+  }
+});
+assert(challengesCount === 6, `All 6 incident scenarios have interactive code challenges and test suites (Found: ${challengesCount})`);
+
+// 4. Test IaC Generator
+global.GameState = { currentLevel: { name: 'Cluster Test' }, engine: { towers: [{ type: 'loadbalancer' }, { type: 'cache' }, { type: 'messagequeue' }] } };
+const dockerComposeYaml = IaCGenerator.generateDockerCompose();
+assert(dockerComposeYaml.includes('redis-cache') && dockerComposeYaml.includes('kafka-broker') && dockerComposeYaml.includes('load-balancer'), 'IaCGenerator creates complete Docker Compose architecture for placed towers');
+const k8sYaml = IaCGenerator.generateKubernetes();
+assert(k8sYaml.includes('apiVersion: apps/v1') && k8sYaml.includes('HorizontalPodAutoscaler'), 'IaCGenerator creates valid Kubernetes Deployment and HPA manifests');
 
 console.log('\n==================================================');
 console.log(`  TEST RESULTS: ${testsPassed} PASSED, ${testsFailed} FAILED`);

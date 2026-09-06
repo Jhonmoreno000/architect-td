@@ -1,8 +1,8 @@
 # Architect Tower Defense 
 
-> Tower Defense educativo sobre DevOps, patrones de arquitectura de software, resiliencia y ciberseguridad.
+> Tower Defense educativo y plataforma interactiva para aprender DevOps, programación, patrones de arquitectura de software, algoritmia y ciberseguridad.
 
-![HTML5 Canvas](https://img.shields.io/badge/HTML5-Canvas-orange) ![Vanilla JS](https://img.shields.io/badge/JavaScript-Vanilla-yellow) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8) ![Docker](https://img.shields.io/badge/Docker-Ready-blue) ![Tests](https://img.shields.io/badge/Tests-51%20Passing-brightgreen) ![License](https://img.shields.io/badge/License-MIT-green)
+![HTML5 Canvas](https://img.shields.io/badge/HTML5-Canvas-orange) ![Vanilla JS](https://img.shields.io/badge/JavaScript-ES6%2B-yellow) ![Code IDE](https://img.shields.io/badge/Code%20IDE-Embedded-purple) ![IaC Generator](https://img.shields.io/badge/IaC-Docker%20%7C%20K8s-informational) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8) ![Docker](https://img.shields.io/badge/Docker-Ready-blue) ![Tests](https://img.shields.io/badge/Tests-56%20Passing-brightgreen) ![License](https://img.shields.io/badge/License-MIT-green)
 
 ---
 
@@ -10,10 +10,14 @@
 
 - [Descripción](#-descripción)
 - [Modos de Juego](#-modos-de-juego)
+- [Plataforma Educativa de Programación](#-plataforma-educativa-de-programación)
+  - [1. Torres Programables (Scripting Engine & Sandboxing)](#1-torres-programables-scripting-engine--sandboxing)
+  - [2. Terminal de Hotfix en Vivo (Retos de Código & Testing)](#2-terminal-de-hotfix-en-vivo-retos-de-código--testing)
+  - [3. Laboratorio DSA (Visualizador de Estructuras de Datos)](#3-laboratorio-dsa-visualizador-de-estructuras-de-datos)
+  - [4. Generador de Infraestructura como Código (IaC)](#4-generador-de-infraestructura-como-código-iac)
 - [Sistema de Servidores (Torres)](#-sistema-de-servidores-torres)
 - [Catálogo de Amenazas Cibernéticas](#-catálogo-de-amenazas-cibernéticas)
 - [Radar Táctico & Telemetría en Tiempo Real](#-radar-táctico--telemetría-en-tiempo-real)
-- [Sistemas Educativos & RCA Quizzes](#-sistemas-educativos--rca-quizzes)
 - [Despliegue con Docker](#-despliegue-con-docker)
 - [Pruebas Automatizadas](#-pruebas-automatizadas)
 - [Controles del Juego](#-controles-del-juego)
@@ -47,6 +51,36 @@ Selecciona entre 5 topologías de red perimetral:
 - **Cloud Edge PoPs:** 4 nodos satélite perimetrales que generan presupuesto continuo.
 - **Kubernetes Chaos Cluster:** Pods de orquestación con aceleración de disparo por cuadrante.
 - **Fortaleza Cuántica Zero-Trust:** Brechas cuánticas aleatorias y portales de distorsión.
+
+---
+
+## 💻 Plataforma Educativa de Programación
+
+El proyecto incorpora un ecosistema didáctico interactivo diseñado para enseñar y desarrollar habilidades reales de programación, algoritmia y DevOps:
+
+### 1. Torres Programables (Scripting Engine & Sandboxing)
+- **Editor Embebido Retro-IDE:** Permite inspeccionar y modificar los algoritmos de targeting de las torres en JavaScript.
+- **Estrategias de Balanceo Reales:** Programa algoritmos como *Round Robin*, *Least Connections*, *Closest to Core* o *Highest HP*.
+- **Bonificación Algorítmica:** Servidores con scripts optimizados reciben un indicador `λ` en el campo de batalla y un **+30% DPS algorítmico**.
+- **Sandbox Seguro:** Ejecución aislada con watchdog timeout (80ms) que protege el canvas contra bucles infinitos y bloquea accesos no autorizados a APIs del navegador.
+
+### 2. Terminal de Hotfix en Vivo (Retos de Código & Testing)
+- **Incidentes SRE Interactivos:** Al surgir alertas tipo PagerDuty (fugas de memoria, inyecciones SQL, cascadas de microservicios), el jugador puede abrir la **Terminal de Hotfix**.
+- **Depuración Práctica:** Corrige el código vulnerable directamente en el editor con sintaxis resaltada y autocompletado.
+- **Suite de Tests en el Navegador:** El motor evalúa assertions unitarias (`assert.assertEqual`, `assert.assertNotContains`) en tiempo real.
+- **Recompensa Doble:** Resolver el incidente mediante código otorga el doble de presupuesto y puntaje.
+
+### 3. Laboratorio DSA (Visualizador de Estructuras de Datos)
+- Acceso rápido desde el HUD mediante el botón **DSA LAB**.
+- **Cola FIFO (Kafka):** Visualiza en tiempo real los punteros `Head` (consumidor) y `Tail` (productor), el llenado del búfer y los efectos de *Backpressure*.
+- **Caché LRU (Redis):** Demuestra el acceso en tiempo $O(1)$ con Hash Maps y la política de desalojo de elementos menos recientemente usados (*Least Recently Used*).
+- **Balanceador de Carga:** Simula la distribución de peticiones y balanceo de carga en un clúster de nodos.
+
+### 4. Generador de Infraestructura como Código (IaC)
+- Acceso desde el botón **DEVOPS IAC** en el HUD superior.
+- **Docker Compose:** Genera un archivo `docker-compose.yml` completo y funcional con los contenedores correspondientes a la topología desplegada (Nginx, Redis, Kafka, Postgres, Envoy).
+- **Kubernetes:** Manifiestos de `Deployment`, `Service` y `HorizontalPodAutoscaler` (HPA).
+- **Exportable:** Botón para copiar el código y probarlo localmente con `docker compose up`.
 
 ---
 
