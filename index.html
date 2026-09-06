@@ -163,12 +163,12 @@
     </div>
   </div>
 
-  <!-- INCIDENT RCA MODAL -->
+  <!-- INCIDENT RCA & HOTFIX IDE MODAL -->
   <div id="incident-modal" class="fixed inset-0 z-50 bg-[#04060e]/95 flex-col items-center justify-center p-6 hidden">
-    <div class="max-w-2xl w-full bg-[#080d18] border border-yellow-500/40 rounded-2xl p-6 shadow-[0_0_40px_rgba(234,179,8,0.2)] flex flex-col space-y-4">
+    <div class="max-w-3xl w-full bg-[#080d18] border border-yellow-500/40 rounded-2xl p-6 shadow-[0_0_40px_rgba(234,179,8,0.2)] flex flex-col space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="border-b border-white/10 pb-3 flex items-center justify-between">
         <div>
-          <div class="text-xs text-yellow-400 font-bold uppercase tracking-widest font-heading mb-1">// PAGERDUTY INCIDENT - ROOT CAUSE ANALYSIS</div>
+          <div class="text-xs text-yellow-400 font-bold uppercase tracking-widest font-heading mb-1">// PAGERDUTY INCIDENT SRE TERMINAL</div>
           <h2 id="incident-title" class="text-xl font-bold text-white font-heading"></h2>
         </div>
         <div class="w-8 h-8 rounded-lg bg-yellow-500/20 text-yellow-400 border border-yellow-500/40 flex items-center justify-center">
@@ -176,10 +176,132 @@
         </div>
       </div>
 
-      <div class="p-4 rounded-xl bg-black/60 border border-white/10 text-xs text-slate-300 leading-relaxed font-sans" id="incident-scenario"></div>
-      <div class="text-xs font-bold text-cyan-300 uppercase tracking-wide font-heading" id="incident-question"></div>
-      <div id="incident-options" class="space-y-2"></div>
+      <div class="p-3.5 rounded-xl bg-black/60 border border-white/10 text-xs text-slate-300 leading-relaxed font-sans" id="incident-scenario"></div>
+
+      <!-- Mode Tabs (Hotfix vs Quiz) -->
+      <div id="incident-tabs-container"></div>
+
+      <!-- Hotfix IDE View -->
+      <div id="incident-hotfix-view" class="space-y-3">
+        <div class="bg-[#040812] border border-cyan-500/30 p-3 rounded-xl">
+          <h3 id="incident-challenge-title" class="text-xs font-bold text-cyan-400 font-heading mb-1"></h3>
+          <p id="incident-challenge-desc" class="text-[11px] text-slate-300 leading-relaxed font-sans"></p>
+        </div>
+        <div id="incident-code-mount"></div>
+        <div id="incident-test-status"></div>
+        <button id="btn-run-hotfix" class="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-black font-bold text-xs uppercase tracking-wider font-heading flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:scale-[1.01] transition-all">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <span>EJECUTAR PRUEBAS & DESPLEGAR HOTFIX (2X RECOMPENSA)</span>
+        </button>
+      </div>
+
+      <!-- Conceptual Quiz View -->
+      <div id="incident-quiz-view" class="space-y-2.5 hidden">
+        <div class="text-xs font-bold text-cyan-300 uppercase tracking-wide font-heading" id="incident-question"></div>
+        <div id="incident-options" class="space-y-2"></div>
+      </div>
+
       <div id="incident-result" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- PROGRAMMABLE TOWER CODE IDE MODAL -->
+  <div id="tower-code-modal" class="fixed inset-0 z-50 bg-[#04060e]/95 flex-col items-center justify-center p-6 hidden">
+    <div class="max-w-3xl w-full bg-[#080d18] border border-purple-500/40 rounded-2xl p-5 shadow-[0_0_40px_rgba(168,85,247,0.25)] flex flex-col space-y-3.5 max-h-[90vh] overflow-y-auto">
+      <div class="border-b border-white/10 pb-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span id="tower-code-icon" class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold border shrink-0"></span>
+          <div>
+            <div class="text-xs text-purple-400 font-bold uppercase tracking-widest font-heading">// SCRIPTING ENGINE & TARGETING ALGORITHM</div>
+            <h2 id="tower-code-name" class="text-xl font-bold text-white font-heading"></h2>
+          </div>
+        </div>
+        <button id="btn-close-tower-code" class="text-slate-400 hover:text-white text-sm px-2 py-1 rounded hover:bg-white/10 font-bold cursor-pointer">✕</button>
+      </div>
+
+      <div class="bg-black/60 border border-white/10 p-3 rounded-xl text-xs text-slate-300 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-cyan-400 font-heading">PLANTILLAS DE ALGORITMOS:</span>
+          <span class="text-[10px] text-green-400 font-mono">BENEFICIO: +30% DPS ALGORÍTMICO</span>
+        </div>
+        <select id="tower-code-templates" class="w-full bg-[#050914] border border-white/15 rounded-lg p-2 text-xs text-slate-200 font-code outline-none focus:border-purple-500"></select>
+      </div>
+
+      <div id="tower-code-editor-mount" class="min-h-[220px]"></div>
+
+      <div id="tower-code-status" class="hidden"></div>
+
+      <div class="flex items-center gap-3 pt-2">
+        <button id="btn-tower-code-reset" class="py-2.5 px-4 rounded-xl border border-white/20 text-slate-300 hover:text-white text-xs font-heading font-bold uppercase transition-all cursor-pointer">
+          RESTAURAR DE FÁBRICA
+        </button>
+        <button id="btn-tower-code-compile" class="flex-1 py-2.5 px-6 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider font-heading flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:scale-[1.01] transition-all">
+          <svg class="w-4 h-4 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <span>COMPILAR & APLICAR ALGORITMO A LA TORRE</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DSA VISUALIZER MODAL -->
+  <div id="dsa-modal" class="fixed inset-0 z-50 bg-[#04060e]/95 flex-col items-center justify-center p-6 hidden">
+    <div class="max-w-3xl w-full bg-[#080d18] border border-emerald-500/40 rounded-2xl p-6 shadow-[0_0_40px_rgba(16,185,129,0.2)] flex flex-col space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="border-b border-white/10 pb-3 flex items-center justify-between">
+        <div>
+          <div class="text-xs text-emerald-400 font-bold uppercase tracking-widest font-heading mb-1">// LABORATORIO VISUAL DE ESTRUCTURAS DE DATOS & ALGORITMOS</div>
+          <h2 class="text-xl font-bold text-white font-heading">DSA VISUALIZER (KAFKA, REDIS & LOAD BALANCING)</h2>
+        </div>
+        <button id="btn-close-dsa" class="text-slate-400 hover:text-white px-3 py-1 text-sm rounded-lg hover:bg-white/5 cursor-pointer">✕ CERRAR</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex items-center gap-2 border-b border-white/10 pb-2">
+        <button id="tab-dsa-queue" class="py-1.5 px-3.5 rounded-lg text-xs font-heading font-bold uppercase transition-all cursor-pointer bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+          COLA FIFO (KAFKA)
+        </button>
+        <button id="tab-dsa-cache" class="py-1.5 px-3.5 rounded-lg text-xs font-heading font-bold uppercase transition-all cursor-pointer text-slate-400 hover:text-white">
+          CACHÉ LRU (REDIS)
+        </button>
+        <button id="tab-dsa-lb" class="py-1.5 px-3.5 rounded-lg text-xs font-heading font-bold uppercase transition-all cursor-pointer text-slate-400 hover:text-white">
+          LOAD BALANCER
+        </button>
+      </div>
+
+      <div id="dsa-visualizer-content" class="min-h-[220px]"></div>
+    </div>
+  </div>
+
+  <!-- DEVOPS IAC GENERATOR MODAL -->
+  <div id="iac-modal" class="fixed inset-0 z-50 bg-[#04060e]/95 flex-col items-center justify-center p-6 hidden">
+    <div class="max-w-3xl w-full bg-[#080d18] border border-cyan-500/40 rounded-2xl p-6 shadow-[0_0_40px_rgba(6,182,212,0.2)] flex flex-col space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="border-b border-white/10 pb-3 flex items-center justify-between">
+        <div>
+          <div class="text-xs text-cyan-400 font-bold uppercase tracking-widest font-heading mb-1">// DEVOPS INFRASTRUCTURE AS CODE GENERATOR</div>
+          <h2 class="text-xl font-bold text-white font-heading">INFRAESTRUCTURA COMO CÓDIGO (IaC) EN VIVO</h2>
+          <p class="text-xs text-slate-400">Genera automáticamente archivos Docker Compose y manifiestos Kubernetes según tus servidores desplegados en batalla.</p>
+        </div>
+        <button id="btn-close-iac" class="text-slate-400 hover:text-white px-3 py-1 text-sm rounded-lg hover:bg-white/5 cursor-pointer">✕ CERRAR</button>
+      </div>
+
+      <!-- IaC Tabs -->
+      <div class="flex items-center justify-between border-b border-white/10 pb-2">
+        <div class="flex items-center gap-2">
+          <button id="tab-iac-docker" class="py-1.5 px-3.5 rounded-lg text-xs font-heading font-bold uppercase transition-all cursor-pointer bg-cyan-500/20 text-cyan-400 border border-cyan-500/40">
+            DOCKER-COMPOSE.YML
+          </button>
+          <button id="tab-iac-k8s" class="py-1.5 px-3.5 rounded-lg text-xs font-heading font-bold uppercase transition-all cursor-pointer text-slate-400 hover:text-white">
+            KUBERNETES.YAML
+          </button>
+        </div>
+        <button id="btn-copy-iac" class="py-1 px-3.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-black font-heading font-bold text-xs uppercase transition-all cursor-pointer">
+          COPIAR
+        </button>
+      </div>
+
+      <!-- Generated Code Output -->
+      <div class="bg-[#03060c] border border-white/10 rounded-xl p-4 overflow-auto max-h-[360px]">
+        <pre id="iac-code-content" class="text-[11px] font-code text-slate-300 whitespace-pre leading-relaxed"></pre>
+      </div>
     </div>
   </div>
 
@@ -308,6 +430,14 @@
 
       <!-- Quick Action Controls -->
       <div class="flex items-center gap-2.5">
+        <button id="btn-dsa" class="text-xs text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-950/30 transition-colors font-heading font-bold flex items-center gap-1.5 cursor-pointer shadow-sm">
+          <svg class="w-3.5 h-3.5 stroke-current" fill="none" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <span>DSA LAB</span>
+        </button>
+        <button id="btn-iac" class="text-xs text-indigo-400 hover:text-indigo-300 px-3 py-1.5 rounded-xl border border-indigo-500/30 bg-indigo-950/30 transition-colors font-heading font-bold flex items-center gap-1.5 cursor-pointer shadow-sm">
+          <svg class="w-3.5 h-3.5 stroke-current" fill="none" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+          <span>DEVOPS IAC</span>
+        </button>
         <button id="btn-guide" class="text-xs text-green-400 hover:text-green-300 px-3 py-1.5 rounded-xl border border-green-500/30 bg-green-950/30 transition-colors font-heading font-bold flex items-center gap-1.5 cursor-pointer">
           <svg class="w-3.5 h-3.5 stroke-current" fill="none" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <span>GUÍA</span>
@@ -469,6 +599,8 @@
   <script src="src/towers/servicemesh.js?v=2.9"></script>
   <script src="src/towers/honeypot.js?v=2.9"></script>
   <script src="src/towers/factory.js?v=2.9"></script>
+  <script src="src/ui/code-editor.js?v=2.9"></script>
+  <script src="src/core/sandbox.js?v=2.9"></script>
   <script src="src/core/audio.js?v=2.9"></script>
   <script src="src/core/engine.js?v=2.9"></script>
   <script src="src/systems/telemetry.js?v=2.9"></script>
@@ -476,6 +608,9 @@
   <script src="src/systems/achievements.js?v=2.9"></script>
   <script src="src/systems/story.js?v=2.9"></script>
   <script src="src/systems/incidents.js?v=2.9"></script>
+  <script src="src/systems/tower-code.js?v=2.9"></script>
+  <script src="src/systems/dsa-visualizer.js?v=2.9"></script>
+  <script src="src/systems/iac.js?v=2.9"></script>
   <script src="src/systems/combat.js?v=2.9"></script>
   <script src="src/systems/grid.js?v=2.9"></script>
   <script src="src/systems/wave.js?v=2.9"></script>

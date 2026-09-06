@@ -20,6 +20,9 @@ const EventHandlers = {
     this.hideScreen('story-modal');
     this.hideScreen('achievements-modal');
     this.hideScreen('incident-modal');
+    this.hideScreen('tower-code-modal');
+    this.hideScreen('dsa-modal');
+    this.hideScreen('iac-modal');
   },
 
   hideScreen(id) {
@@ -39,7 +42,11 @@ const EventHandlers = {
   },
 
   _setupBackdropDismiss() {
-    const modalIds = ['guide-modal', 'codex-modal', 'achievements-modal', 'story-modal', 'incident-modal'];
+    const modalIds = [
+      'guide-modal', 'codex-modal', 'achievements-modal', 
+      'story-modal', 'incident-modal', 'tower-code-modal', 
+      'dsa-modal', 'iac-modal'
+    ];
     modalIds.forEach(id => {
       const el = document.getElementById(id);
       if (el) {
@@ -322,6 +329,87 @@ const EventHandlers = {
     document.getElementById('tab-codex-threats')?.addEventListener('click', () => {
       this.renderCodexThreats();
     });
+
+    // Tower Code Modal Handlers
+    document.getElementById('btn-close-tower-code')?.addEventListener('click', () => {
+      if (typeof TowerCodeSystem !== 'undefined') TowerCodeSystem.closeModal();
+    });
+    document.getElementById('btn-tower-code-compile')?.addEventListener('click', () => {
+      if (typeof TowerCodeSystem !== 'undefined') TowerCodeSystem.compileAndApply();
+    });
+    document.getElementById('btn-tower-code-reset')?.addEventListener('click', () => {
+      if (typeof TowerCodeSystem !== 'undefined') TowerCodeSystem.resetDefault();
+    });
+
+    // DSA Modal Handlers
+    document.getElementById('btn-dsa')?.addEventListener('click', () => {
+      this.closeAllModals();
+      if (typeof DSAVisualizer !== 'undefined') DSAVisualizer.showModal('queue');
+    });
+    document.getElementById('btn-close-dsa')?.addEventListener('click', () => {
+      if (typeof DSAVisualizer !== 'undefined') DSAVisualizer.closeModal();
+    });
+    document.getElementById('tab-dsa-queue')?.addEventListener('click', () => {
+      if (typeof DSAVisualizer !== 'undefined') DSAVisualizer.setTab('queue');
+    });
+    document.getElementById('tab-dsa-cache')?.addEventListener('click', () => {
+      if (typeof DSAVisualizer !== 'undefined') DSAVisualizer.setTab('cache');
+    });
+    document.getElementById('tab-dsa-lb')?.addEventListener('click', () => {
+      if (typeof DSAVisualizer !== 'undefined') DSAVisualizer.setTab('lb');
+    });
+
+    // IaC Modal Handlers
+    document.getElementById('btn-iac')?.addEventListener('click', () => {
+      this.closeAllModals();
+      this.openIaC();
+    });
+    document.getElementById('btn-close-iac')?.addEventListener('click', () => {
+      this.hideScreen('iac-modal');
+    });
+    document.getElementById('tab-iac-docker')?.addEventListener('click', () => {
+      this.renderIaCDocker();
+    });
+    document.getElementById('tab-iac-k8s')?.addEventListener('click', () => {
+      this.renderIaCK8s();
+    });
+    document.getElementById('btn-copy-iac')?.addEventListener('click', () => {
+      const code = document.getElementById('iac-code-content')?.textContent;
+      if (code) {
+        navigator.clipboard.writeText(code);
+        const btn = document.getElementById('btn-copy-iac');
+        if (btn) {
+          btn.textContent = '¡COPIADO!';
+          setTimeout(() => { btn.textContent = 'COPIAR'; }, 1500);
+        }
+      }
+    });
+  },
+
+  openIaC() {
+    this.closeAllModals();
+    this.showScreen('iac-modal', 'flex');
+    this.renderIaCDocker();
+  },
+
+  renderIaCDocker() {
+    document.getElementById('tab-iac-docker')?.classList.add('bg-cyan-500/20', 'text-cyan-400', 'border-cyan-500/40');
+    document.getElementById('tab-iac-k8s')?.classList.remove('bg-cyan-500/20', 'text-cyan-400', 'border-cyan-500/40');
+    if (typeof IaCGenerator !== 'undefined') {
+      const yaml = IaCGenerator.generateDockerCompose();
+      const codeEl = document.getElementById('iac-code-content');
+      if (codeEl) codeEl.textContent = yaml;
+    }
+  },
+
+  renderIaCK8s() {
+    document.getElementById('tab-iac-k8s')?.classList.add('bg-cyan-500/20', 'text-cyan-400', 'border-cyan-500/40');
+    document.getElementById('tab-iac-docker')?.classList.remove('bg-cyan-500/20', 'text-cyan-400', 'border-cyan-500/40');
+    if (typeof IaCGenerator !== 'undefined') {
+      const yaml = IaCGenerator.generateKubernetes();
+      const codeEl = document.getElementById('iac-code-content');
+      if (codeEl) codeEl.textContent = yaml;
+    }
   },
 
   _setupGuide() {

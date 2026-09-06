@@ -1,9 +1,12 @@
 // ============================================
-// SYSTEMS - Incident Controller & Educational RCA Quiz Engine
+// SYSTEMS - Incident Controller & Educational Code Hotfix IDE
+// Dual Mode: Interactive Code Challenge (Double Reward) & Conceptual RCA Quiz
 // ============================================
 
 const IncidentSystem = {
   currentIncident: null,
+  currentMode: 'hotfix', // 'hotfix' or 'quiz'
+  codeEditor: null,
   answeredIncidents: new Set(),
 
   triggerRandomIncident() {
@@ -18,6 +21,7 @@ const IncidentSystem = {
   showIncidentModal(quiz) {
     this.currentIncident = quiz;
     this.answeredIncidents.add(quiz.id);
+    this.currentMode = quiz.codeChallenge ? 'hotfix' : 'quiz';
 
     AudioSystem.play('boss_alert');
 
@@ -29,25 +33,156 @@ const IncidentSystem = {
 
     document.getElementById('incident-title').textContent = quiz.title;
     document.getElementById('incident-scenario').textContent = quiz.scenario;
-    document.getElementById('incident-question').textContent = quiz.question;
 
-    const optionsContainer = document.getElementById('incident-options');
-    optionsContainer.innerHTML = '';
-
-    quiz.options.forEach((opt, idx) => {
-      const btn = document.createElement('button');
-      btn.className = 'w-full p-3.5 text-left rounded-xl border border-white/10 bg-[#080d18] hover:border-cyan-500/50 hover:bg-[#0e1626] transition-all text-xs text-slate-200 font-sans leading-relaxed cursor-pointer';
-      btn.textContent = opt.text;
-
-      btn.addEventListener('click', () => {
-        this.handleAnswer(opt, quiz);
-      });
-
-      optionsContainer.appendChild(btn);
-    });
+    this.renderModeTabs(quiz);
+    this.renderActiveView(quiz);
 
     const resultBox = document.getElementById('incident-result');
     if (resultBox) resultBox.classList.add('hidden');
+  },
+
+  renderModeTabs(quiz) {
+    const tabContainer = document.getElementById('incident-tabs-container');
+    if (!tabContainer) return;
+
+    if (!quiz.codeChallenge) {
+      tabContainer.innerHTML = '';
+      return;
+    }
+
+    tabContainer.innerHTML = `
+      <div class="flex items-center gap-2 border-b border-white/10 pb-2 mb-2">
+        <button id="btn-tab-hotfix" class="py-1.5 px-3.5 rounded-lg text-xs font-heading font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer ${this.currentMode === 'hotfix' ? 'bg-green-500/20 text-green-400 border border-green-500/40' : 'text-slate-400 hover:text-white'}">
+          <svg class="w-3.5 h-3.5 stroke-current" fill="none" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <span>TERMINAL DE HOTFIX (2X RECOMPENSA)</span>
+        </button>
+        <button id="btn-tab-quiz" class="py-1.5 px-3.5 rounded-lg text-xs font-heading font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer ${this.currentMode === 'quiz' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40' : 'text-slate-400 hover:text-white'}">
+          <svg class="w-3.5 h-3.5 stroke-current" fill="none" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span>PREGUNTA CONCEPTUAL (RCA)</span>
+        </button>
+      </div>
+    `;
+
+    document.getElementById('btn-tab-hotfix')?.addEventListener('click', () => {
+      this.currentMode = 'hotfix';
+      this.renderModeTabs(quiz);
+      this.renderActiveView(quiz);
+    });
+
+    document.getElementById('btn-tab-quiz')?.addEventListener('click', () => {
+      this.currentMode = 'quiz';
+      this.renderModeTabs(quiz);
+      this.renderActiveView(quiz);
+    });
+  },
+
+  renderActiveView(quiz) {
+    const hotfixView = document.getElementById('incident-hotfix-view');
+    const quizView = document.getElementById('incident-quiz-view');
+
+    if (this.currentMode === 'hotfix' && quiz.codeChallenge) {
+      if (hotfixView) hotfixView.classList.remove('hidden');
+      if (quizView) quizView.classList.add('hidden');
+
+      document.getElementById('incident-challenge-title').textContent = quiz.codeChallenge.title;
+      document.getElementById('incident-challenge-desc').textContent = quiz.codeChallenge.instructions;
+
+      const editorMount = document.getElementById('incident-code-mount');
+      editorMount.innerHTML = '';
+      this.codeEditor = new EmbeddedCodeEditor({
+        container: editorMount,
+        initialCode: quiz.codeChallenge.initialCode,
+        language: 'javascript'
+      });
+
+      const testsBox = document.getElementById('incident-test-status');
+      if (testsBox) {
+        testsBox.innerHTML = `
+          <div class="text-[11px] text-slate-400 font-mono">
+            Pruebas requeridas (${quiz.codeChallenge.tests.length}):
+            <ul class="list-disc pl-4 mt-1 space-y-0.5 text-slate-500">
+              ${quiz.codeChallenge.tests.map(t => `<li>${t.name}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
+
+      const runBtn = document.getElementById('btn-run-hotfix');
+      if (runBtn) {
+        runBtn.onclick = () => this.handleRunHotfix(quiz);
+      }
+    } else {
+      if (hotfixView) hotfixView.classList.add('hidden');
+      if (quizView) quizView.classList.remove('hidden');
+
+      document.getElementById('incident-question').textContent = quiz.question;
+      const optionsContainer = document.getElementById('incident-options');
+      optionsContainer.innerHTML = '';
+
+      quiz.options.forEach((opt) => {
+        const btn = document.createElement('button');
+        btn.className = 'w-full p-3.5 text-left rounded-xl border border-white/10 bg-[#080d18] hover:border-cyan-500/50 hover:bg-[#0e1626] transition-all text-xs text-slate-200 font-sans leading-relaxed cursor-pointer';
+        btn.textContent = opt.text;
+        btn.addEventListener('click', () => {
+          this.handleAnswer(opt, quiz);
+        });
+        optionsContainer.appendChild(btn);
+      });
+    }
+  },
+
+  handleRunHotfix(quiz) {
+    if (!this.codeEditor) return;
+    const userCode = this.codeEditor.getValue();
+    const testsBox = document.getElementById('incident-test-status');
+
+    const evalResult = SandboxEvaluator.runTestSuite(userCode, quiz.codeChallenge.tests);
+
+    if (evalResult.allPassed) {
+      AudioSystem.play('wave');
+      if (typeof AchievementSystem !== 'undefined') {
+        AchievementSystem.check('incident_master');
+      }
+
+      const doubleMoney = quiz.reward.money * 2;
+      GameState.money += doubleMoney;
+      GameState.score += doubleMoney * 4;
+      GameState.updateUI();
+
+      if (testsBox) {
+        testsBox.innerHTML = `
+          <div class="p-3 rounded-xl bg-green-950/40 border border-green-500/40 text-green-300 text-xs font-mono space-y-2">
+            <div class="font-bold flex items-center justify-between">
+              <span>✓ ¡TODAS LAS PRUEBAS PASARON! (HOTFIX VALIDADO EN PRODUCCIÓN)</span>
+              <span class="text-yellow-400 font-bold">+$${doubleMoney} (2X BONUS)</span>
+            </div>
+            <div class="text-[11px] text-slate-300">Has resuelto la vulnerabilidad mediante código de ingeniería real.</div>
+            <button id="btn-close-hotfix-success" class="w-full mt-2 py-2 px-4 rounded-xl bg-green-600 hover:bg-green-500 text-black font-bold uppercase text-xs transition-all cursor-pointer font-heading">
+              DESPLEGAR A PRODUCCIÓN & CONTINUAR ▶
+            </button>
+          </div>
+        `;
+        document.getElementById('btn-close-hotfix-success')?.addEventListener('click', () => {
+          this.closeModal();
+        });
+      }
+    } else {
+      AudioSystem.play('error');
+      if (testsBox) {
+        testsBox.innerHTML = `
+          <div class="p-3 rounded-xl bg-red-950/40 border border-red-500/40 text-red-300 text-xs font-mono space-y-2">
+            <div class="font-bold">✕ FALLARON LAS PRUEBAS AUTOMATIZADAS:</div>
+            <ul class="list-disc pl-4 space-y-1 text-[11px]">
+              ${evalResult.results.map(r => `
+                <li class="${r.passed ? 'text-green-400' : 'text-red-400'}">
+                  ${r.passed ? '✓' : '✕'} ${r.name} ${r.error ? `➔ <span class="text-yellow-300">${r.error}</span>` : ''}
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        `;
+      }
+    }
   },
 
   handleAnswer(selectedOption, quiz) {
@@ -107,3 +242,11 @@ const IncidentSystem = {
     }
   }
 };
+
+// Global exposure
+if (typeof window !== 'undefined') {
+  window.IncidentSystem = IncidentSystem;
+}
+if (typeof module !== 'undefined') {
+  module.exports = { IncidentSystem };
+}
