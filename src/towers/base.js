@@ -48,6 +48,12 @@ class Tower extends Entity {
     this.recoil = 0;
     this.overclockTimer = 0;
     this.smokeTimer = 0;
+
+    // Programmable Algorithm Scripting
+    this.customScript = null;
+    this.isScriptActive = false;
+    this.scriptMultiplier = 1.0;
+    this.scriptLastError = null;
   }
 
   takeDamage(amount) {
@@ -122,6 +128,30 @@ class Tower extends Entity {
     if (validEnemies.length === 0) {
       this.target = null;
       return null;
+    }
+
+    // Custom Programmable Script Execution
+    if (this.customScript && typeof SandboxEvaluator !== 'undefined') {
+      try {
+        const rawEnemies = validEnemies.map(v => v.enemy);
+        const evalRes = SandboxEvaluator.execute(this.customScript, 'selectTarget', [rawEnemies, this]);
+        if (evalRes.success && evalRes.result && evalRes.result.alive) {
+          this.target = evalRes.result;
+          this.isScriptActive = true;
+          this.scriptMultiplier = 1.3;
+          this.scriptLastError = null;
+          const cx = this.x + this.size / 2;
+          const cy = this.y + this.size / 2;
+          this.turretAngle = Math.atan2(this.target.y - cy, this.target.x - cx);
+          return this.target;
+        } else if (!evalRes.success) {
+          this.scriptLastError = evalRes.error;
+          this.isScriptActive = false;
+        }
+      } catch (err) {
+        this.scriptLastError = err.message;
+        this.isScriptActive = false;
+      }
     }
 
     switch (this.targetMode) {
@@ -359,6 +389,15 @@ class Tower extends Entity {
       ctx.beginPath();
       ctx.arc(pipX, pipY, 2.2, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    // Programmed Algorithm Badge
+    if (this.isScriptActive) {
+      ctx.fillStyle = '#00ff41';
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'top';
+      ctx.fillText('λ', this.x + this.size - 4, this.y + 4);
     }
 
     // Health Bar (Drawn when damaged)

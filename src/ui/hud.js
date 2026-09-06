@@ -254,6 +254,17 @@ const HUD = {
           </button>
         ` : ''}
 
+        <!-- Program Algorithm Button -->
+        <button id="btn-program-tower" class="w-full py-2 px-3 rounded-xl border border-purple-500/40 bg-purple-950/40 text-purple-300 text-xs font-bold uppercase tracking-wider hover:bg-purple-900/60 transition-all flex items-center justify-between font-heading cursor-pointer shadow-md">
+          <span class="flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 stroke-current" fill="none" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <span>Programar Algoritmo</span>
+          </span>
+          <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${tower.isScriptActive ? 'bg-green-500/20 text-green-400 border border-green-500/40' : 'bg-purple-500/20 text-purple-300'}">
+            ${tower.isScriptActive ? '✓ ACTIVO (+30%)' : 'CUSTOM JS'}
+          </span>
+        </button>
+
         <!-- Target Priority Mode Button -->
         <button id="btn-cycle-target" class="w-full py-1.5 px-3 rounded-xl border border-cyan-500/30 bg-cyan-950/40 text-cyan-300 text-xs font-bold uppercase tracking-wider hover:bg-cyan-900/50 transition-colors flex items-center justify-between font-heading cursor-pointer">
           <span>Prioridad Objetivo:</span>
@@ -291,6 +302,12 @@ const HUD = {
     document.getElementById('btn-repair-tower')?.addEventListener('click', () => {
       tower.repair();
       this.updateInspector(state);
+    });
+
+    document.getElementById('btn-program-tower')?.addEventListener('click', () => {
+      if (typeof TowerCodeSystem !== 'undefined') {
+        TowerCodeSystem.openEditor(tower);
+      }
     });
 
     document.getElementById('btn-cycle-target')?.addEventListener('click', () => {

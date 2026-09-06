@@ -26,6 +26,11 @@ const CombatSystem = {
       finalDamage = Math.round(finalDamage * 1.5);
     }
 
+    if (sourceTower && sourceTower.scriptMultiplier && sourceTower.scriptMultiplier > 1.0) {
+      finalDamage = Math.round(finalDamage * sourceTower.scriptMultiplier);
+      isCrit = true;
+    }
+
     enemy.takeDamage(finalDamage);
 
     if (sourceTower) {
