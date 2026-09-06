@@ -2,7 +2,7 @@
 
 > Tower Defense educativo y plataforma interactiva para aprender DevOps, programación, patrones de arquitectura de software, algoritmia y ciberseguridad.
 
-![HTML5 Canvas](https://img.shields.io/badge/HTML5-Canvas-orange) ![Vanilla JS](https://img.shields.io/badge/JavaScript-ES6%2B-yellow) ![Code IDE](https://img.shields.io/badge/Code%20IDE-Embedded-purple) ![IaC Generator](https://img.shields.io/badge/IaC-Docker%20%7C%20K8s-informational) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8) ![Docker](https://img.shields.io/badge/Docker-Ready-blue) ![Tests](https://img.shields.io/badge/Tests-56%20Passing-brightgreen) ![License](https://img.shields.io/badge/License-MIT-green)
+![HTML5 Canvas](https://img.shields.io/badge/HTML5-Canvas-orange) ![Vanilla JS](https://img.shields.io/badge/JavaScript-ES6%2B-yellow) ![Code IDE](https://img.shields.io/badge/Code%20IDE-Embedded-purple) ![IaC Generator](https://img.shields.io/badge/IaC-Docker%20%7C%20K8s-informational) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8) ![Docker](https://img.shields.io/badge/Docker-Ready-blue) ![Tests](https://img.shields.io/badge/Tests-56%20Passing-brightgreen)
 
 ---
 
@@ -54,7 +54,7 @@ Selecciona entre 5 topologías de red perimetral:
 
 ---
 
-## 💻 Plataforma Educativa de Programación
+## Plataforma Educativa de Programación
 
 El proyecto incorpora un ecosistema didáctico interactivo diseñado para enseñar y desarrollar habilidades reales de programación, algoritmia y DevOps:
 
@@ -170,8 +170,3 @@ node tests/suite.test.js
 - **Espacio:** Pausar / Reanudar el juego.
 - **Esc:** Deseleccionar servidor o cerrar modales.
 
----
-
-## 📄 Licencia
-
-Distribuido bajo la Licencia MIT. Desarrollado con ❤️ para la comunidad de ingeniería de software, DevOps y ciberseguridad.
